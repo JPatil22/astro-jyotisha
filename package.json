@@ -1,0 +1,10 @@
+{
+  "name": "cosmicinsight",
+  "version": "1.0.0",
+  "description": "Mystical portal: astrology, palmistry, numerology, and tarot.",
+  "type": "module",
+  "scripts": {
+    "serve": "python -m http.server 8123",
+    "test": "node test/ephemeris.test.mjs"
+  }
+}

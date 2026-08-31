@@ -1,0 +1,678 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Jyotisha — Vedic Astrology, Numerology & Palmistry</title>
+  <meta name="description" content="Jyotisha: your sidereal Vedic birth chart (Kundli) with the 9 grahas, Nakshatra and Rashi, Vimshottari Dasha, Guna Milan matching, Ank Jyotish numerology, and Hast Rekha palmistry.">
+
+  <!-- Google Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+  
+  <!-- CSS Stylesheet -->
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+  <!-- Inline SVG icon sprite (referenced via <use href="#i-..."/>) -->
+  <svg width="0" height="0" style="position:absolute" aria-hidden="true" focusable="false">
+    <defs>
+      <symbol id="i-sparkle" viewBox="0 0 24 24"><path d="M12 3l2.1 6.6L21 12l-6.9 2.4L12 21l-2.1-6.6L3 12l6.9-2.4Z"/></symbol>
+      <symbol id="i-grid" viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/></symbol>
+      <symbol id="i-sun" viewBox="0 0 24 24"><circle cx="12" cy="12" r="4.2"/><path d="M12 2v2M12 20v2M2 12h2M20 12h2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/></symbol>
+      <symbol id="i-hand" viewBox="0 0 24 24"><path d="M8 13.5V6a1.5 1.5 0 0 1 3 0v4.5m0 0V4.5a1.5 1.5 0 0 1 3 0V11m0-.5V6.5a1.5 1.5 0 0 1 3 0V14c0 3.3-2.7 6-6 6h-.5c-1.8 0-2.8-.8-4-2.4l-2.3-3.1a1.5 1.5 0 0 1 2.4-1.8l1 .8"/></symbol>
+      <symbol id="i-hash" viewBox="0 0 24 24"><path d="M4 9h16M4 15h16M10 3 8 21M16 3l-2 18"/></symbol>
+      <symbol id="i-cards" viewBox="0 0 24 24"><rect x="3" y="6" width="11" height="15" rx="2"/><path d="M8.5 6V5a2 2 0 0 1 2-2h8a2 2 0 0 1 2 2v11a2 2 0 0 1-2 2h-1"/></symbol>
+      <symbol id="i-menu" viewBox="0 0 24 24"><path d="M3 6h18M3 12h18M3 18h18"/></symbol>
+      <symbol id="i-pin" viewBox="0 0 24 24"><path d="M12 21s7-5.6 7-11a7 7 0 1 0-14 0c0 5.4 7 11 7 11Z"/><circle cx="12" cy="10" r="2.5"/></symbol>
+      <symbol id="i-rings" viewBox="0 0 24 24"><circle cx="8.5" cy="14" r="5.5"/><circle cx="15.5" cy="14" r="5.5"/></symbol>
+      <symbol id="i-hourglass" viewBox="0 0 24 24"><path d="M6 2h12M6 22h12M8 2v3.5l4 4.5 4-4.5V2M8 22v-3.5l4-4.5 4 4.5V22"/></symbol>
+      <symbol id="i-upload" viewBox="0 0 24 24"><path d="M12 15V3M8 7l4-4 4 4M4 15v4a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-4"/></symbol>
+      <symbol id="i-heart" viewBox="0 0 24 24"><path d="M12 20s-7-4.6-7-10a4 4 0 0 1 7-2.6A4 4 0 0 1 19 10c0 5.4-7 10-7 10Z"/></symbol>
+      <symbol id="i-brain" viewBox="0 0 24 24"><path d="M12 5.5A3 3 0 0 0 6.5 4 3 3 0 0 0 4.8 9.4 3 3 0 0 0 6 15a3 3 0 0 0 5 1.3M12 5.5A3 3 0 0 1 17.5 4 3 3 0 0 1 19.2 9.4 3 3 0 0 1 18 15a3 3 0 0 1-5 1.3M12 5.5v13"/></symbol>
+      <symbol id="i-pulse" viewBox="0 0 24 24"><path d="M2 12h5l2-6 4 12 2-6h7"/></symbol>
+      <symbol id="i-compass" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M15.5 8.5l-2.2 5.3-5.3 2.2 2.2-5.3 5.3-2.2Z"/></symbol>
+      <symbol id="i-briefcase" viewBox="0 0 24 24"><rect x="3" y="7" width="18" height="13" rx="2"/><path d="M8 7V5a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2M3 12h18"/></symbol>
+      <symbol id="i-lotus" viewBox="0 0 24 24"><path d="M12 20c-2.2 0-4-2.2-4-5 0-2.4 1.8-4.6 4-6.5 2.2 1.9 4 4.1 4 6.5 0 2.8-1.8 5-4 5Z"/><path d="M12 20c-4.2 0-7-2.2-7-5 1.9-.4 3.4 0 4.8 1M12 20c4.2 0 7-2.2 7-5-1.9-.4-3.4 0-4.8 1"/></symbol>
+      <symbol id="i-alert" viewBox="0 0 24 24"><path d="M12 3 2 20h20L12 3Z"/><path d="M12 10v4M12 17h.01"/></symbol>
+    </defs>
+  </svg>
+
+  <!-- Floating Starfield Particles Background -->
+  <div id="starfield" class="starfield"></div>
+  <div class="nebula nebula-purple"></div>
+  <div class="nebula nebula-gold"></div>
+
+  <div class="app-container">
+    
+    <!-- Sidebar Navigation -->
+    <aside class="sidebar" id="sidebar-nav">
+      <div class="sidebar-brand">
+        <span class="brand-icon"><svg class="ico ico-accent"><use href="#i-lotus"/></svg></span>
+        <h1 class="brand-name">Jyotisha</h1>
+      </div>
+
+      <nav class="nav-menu">
+        <a href="#dashboard" class="nav-link active" id="nav-dashboard">
+          <span class="nav-icon"><svg class="ico"><use href="#i-grid"/></svg></span> Dashboard
+        </a>
+        <a href="#astrology" class="nav-link" id="nav-astrology">
+          <span class="nav-icon"><svg class="ico"><use href="#i-sun"/></svg></span> Kundli
+        </a>
+        <a href="#palmistry" class="nav-link" id="nav-palmistry">
+          <span class="nav-icon"><svg class="ico"><use href="#i-hand"/></svg></span> Hast Rekha
+        </a>
+        <a href="#numerology" class="nav-link" id="nav-numerology">
+          <span class="nav-icon"><svg class="ico"><use href="#i-hash"/></svg></span> Ank Jyotish
+        </a>
+        <a href="#tarot" class="nav-link" id="nav-tarot">
+          <span class="nav-icon"><svg class="ico"><use href="#i-cards"/></svg></span> Tarot
+        </a>
+      </nav>
+
+      <div class="sidebar-footer">
+        <p>Jyotisha · precise Vedic computation</p>
+      </div>
+    </aside>
+
+    <!-- Main Content Area -->
+    <main class="main-content">
+      
+      <!-- Top header bar -->
+      <header class="top-bar">
+        <button class="mobile-nav-toggle" id="menu-toggle" aria-label="Toggle menu"><svg class="ico"><use href="#i-menu"/></svg></button>
+        <div class="cosmic-time" id="cosmic-clock">Computing sidereal time…</div>
+        <div class="user-profile-summary" id="profile-summary">
+          <span id="quick-zodiac-badge" class="badge hidden"></span>
+        </div>
+      </header>
+
+      <!-- VIEW: Dashboard -->
+      <section id="dashboard-view" class="view-section active">
+        <div class="hero-banner">
+          <h2 class="playfair">Namaste — welcome to Jyotisha</h2>
+          <p class="subtitle">Your sidereal Kundli, Nakshatra, Dasha, and Ank Jyotish — computed precisely from Vedic principles.</p>
+        </div>
+
+        <div class="dashboard-grid">
+          <!-- Daily Status Widget -->
+          <div class="card glass status-card">
+            <h3 class="card-title"><svg class="ico ico-accent"><use href="#i-sparkle"/></svg> Your Vedic Snapshot</h3>
+            <div id="dashboard-status-placeholder">
+              <p class="faded">Enter your name and date of birth for your Surya Rashi and Ank Jyotish numbers. Add your birth time and place in the Kundli tab for the full chart.</p>
+              <div class="form-group row-inline">
+                <input type="text" id="quick-name" placeholder="Your Name" class="input-cosmic">
+                <input type="date" id="quick-dob" class="input-cosmic">
+                <button id="quick-save-btn" class="btn-cosmic btn-gold">Show My Numbers</button>
+              </div>
+            </div>
+            <div id="dashboard-status-content" class="hidden">
+              <div class="status-indicators">
+                <div class="indicator">
+                  <span class="ind-lbl">Surya Rashi</span>
+                  <strong id="dash-sun-sign">-</strong>
+                </div>
+                <div class="indicator">
+                  <span class="ind-lbl">Mulank</span>
+                  <strong id="dash-life-path">-</strong>
+                </div>
+                <div class="indicator">
+                  <span class="ind-lbl">Bhagyank</span>
+                  <strong id="dash-element" class="text-glow">-</strong>
+                </div>
+              </div>
+              <p class="status-summary" id="dash-daily-scope">Open the Kundli tab and add your birth time and place for your full sidereal chart, Nakshatra, and Dasha.</p>
+            </div>
+          </div>
+
+          <!-- Quick Navigation Cards -->
+          <div class="card-link-container">
+            <div class="quick-card glass" onclick="location.hash='#astrology'">
+              <div class="quick-icon"><svg class="ico ico-accent"><use href="#i-sun"/></svg></div>
+              <h4>Vedic Kundli</h4>
+              <p>Your sidereal chart: 9 grahas, Rashi, Nakshatra, Lagna, and Vimshottari Dasha.</p>
+            </div>
+            <div class="quick-card glass" onclick="location.hash='#palmistry'">
+              <div class="quick-icon"><svg class="ico ico-accent"><use href="#i-hand"/></svg></div>
+              <h4>Hast Rekha</h4>
+              <p>Upload a palm photo and trace the major lines for a hand reading.</p>
+            </div>
+            <div class="quick-card glass" onclick="location.hash='#numerology'">
+              <div class="quick-icon"><svg class="ico ico-accent"><use href="#i-hash"/></svg></div>
+              <h4>Ank Jyotish</h4>
+              <p>Mulank, Bhagyank, and Naamank with ruling grahas and number harmony.</p>
+            </div>
+            <div class="quick-card glass" onclick="location.hash='#tarot'">
+              <div class="quick-icon"><svg class="ico ico-accent"><use href="#i-cards"/></svg></div>
+              <h4>Tarot</h4>
+              <p>Draw the Major & Minor Arcana for daily guidance and spreads.</p>
+            </div>
+          </div>
+        </div>
+
+        <!-- Panchang + Rashifal -->
+        <div class="grid-layout cols-2 mb-2">
+          <div class="card glass">
+            <h3 class="card-title"><svg class="ico ico-accent"><use href="#i-sun"/></svg> Today's Panchang</h3>
+            <div class="panchang-grid">
+              <div class="panchang-item"><span class="panchang-lbl">Vara</span><strong id="panchang-vara">-</strong></div>
+              <div class="panchang-item"><span class="panchang-lbl">Tithi</span><strong id="panchang-tithi">-</strong></div>
+              <div class="panchang-item"><span class="panchang-lbl">Nakshatra</span><strong id="panchang-nakshatra">-</strong></div>
+              <div class="panchang-item"><span class="panchang-lbl">Yoga</span><strong id="panchang-yoga">-</strong></div>
+              <div class="panchang-item"><span class="panchang-lbl">Karana</span><strong id="panchang-karana">-</strong></div>
+            </div>
+          </div>
+
+          <div class="card glass">
+            <h3 class="card-title"><svg class="ico ico-accent"><use href="#i-sparkle"/></svg> Rashifal — Chandra Gochar</h3>
+            <div class="form-group">
+              <label for="rashifal-select">Your Janma Rashi (Moon sign)</label>
+              <select id="rashifal-select" class="input-cosmic"></select>
+            </div>
+            <div id="rashifal-box" class="gochar-box mt-1">
+              <strong id="rashifal-transit" class="text-gold"></strong>
+              <p id="rashifal-text" class="mt-1"></p>
+            </div>
+          </div>
+        </div>
+
+        <!-- Quote Card -->
+        <div class="card glass quote-card">
+          <p class="quote-text" id="daily-quote">"यथा पिण्डे तथा ब्रह्माण्डे" — as is the individual, so is the universe.</p>
+          <span class="quote-author" id="daily-author">— Vedic aphorism</span>
+        </div>
+
+        <!-- Transparency / methodology -->
+        <div class="card glass mt-2">
+          <h3 class="card-title"><svg class="ico ico-accent"><use href="#i-alert"/></svg> How this is computed &amp; verified</h3>
+          <ul class="method-list">
+            <li><strong>Planetary positions</strong> use a Keplerian ephemeris validated against <strong>NASA JPL Horizons</strong> — sign-accurate, within ~1° (better than 0.3° for modern births; up to ~2–3° before 1900).</li>
+            <li><strong>Sidereal chart</strong> uses the <strong>Lahiri ayanamsa</strong>. The <strong>Panchang</strong> matches Drik Panchang exactly in testing; <strong>Dasha</strong> and <strong>Ank Jyotish</strong> are computed exactly.</li>
+            <li><strong>Doshas</strong> and <strong>Guna Milan</strong> follow standard whole-sign rules. These are a sound, standard reading — conventions genuinely vary between astrologers, so treat scores and dosha calls as guidance, not absolutes.</li>
+            <li><strong>Interpretations</strong> (readings, gochar tones, remedies) are traditional guidance, not prediction. Jyotisha is for reflection, not decisions about health, finance, or law.</li>
+          </ul>
+        </div>
+      </section>
+
+      <!-- VIEW: Astrology -->
+      <section id="astrology-view" class="view-section">
+        <div class="section-header">
+          <h2 class="playfair">Vedic Kundli — Sidereal Birth Chart</h2>
+          <p>Your Jyotish chart: the 9 grahas, Rashi, and Nakshatra in the sidereal zodiac (Lahiri ayanamsa).</p>
+        </div>
+
+        <div class="grid-layout cols-2">
+          
+          <!-- Input Form & Placements -->
+          <div class="column-left flex-col gap-2">
+            <div class="card glass">
+              <h3 class="card-title"><svg class="ico ico-accent"><use href="#i-sun"/></svg> Enter Birth Coordinates</h3>
+              <form id="astrology-form" class="cosmic-form">
+                <div class="form-row">
+                  <div class="form-group">
+                    <label for="astro-name">Name</label>
+                    <input type="text" id="astro-name" placeholder="Seeker's Name" required class="input-cosmic">
+                  </div>
+                  <div class="form-group">
+                    <label for="astro-dob">Date of Birth</label>
+                    <input type="date" id="astro-dob" required class="input-cosmic">
+                  </div>
+                </div>
+                <div class="form-row">
+                  <div class="form-group">
+                    <label for="astro-time">Time of Birth</label>
+                    <input type="time" id="astro-time" value="12:00" class="input-cosmic">
+                  </div>
+                  <div class="form-group">
+                    <label for="astro-tz">Timezone Offset (Hours vs UTC)</label>
+                    <select id="astro-tz" class="input-cosmic">
+                      <option value="-12">-12:00 (Kwajalein)</option>
+                      <option value="-11">-11:00 (Samoa)</option>
+                      <option value="-10">-10:00 (Hawaii)</option>
+                      <option value="-9">-09:00 (Alaska)</option>
+                      <option value="-8">-08:00 (Pacific Time)</option>
+                      <option value="-7">-07:00 (Mountain Time)</option>
+                      <option value="-6">-06:00 (Central Time)</option>
+                      <option value="-5">-05:00 (Eastern Time)</option>
+                      <option value="-4">-04:00 (Atlantic Time)</option>
+                      <option value="-3">-03:00 (Buenos Aires)</option>
+                      <option value="-2">-02:00 (Mid-Atlantic)</option>
+                      <option value="-1">-01:00 (Azores)</option>
+                      <option value="0" selected>+00:00 (UTC/London)</option>
+                      <option value="1">+01:00 (Paris/Berlin)</option>
+                      <option value="2">+02:00 (Athens/Cairo)</option>
+                      <option value="3">+03:00 (Moscow/Nairobi)</option>
+                      <option value="3.5">+03:30 (Tehran)</option>
+                      <option value="4">+04:00 (Dubai)</option>
+                      <option value="4.5">+04:30 (Kabul)</option>
+                      <option value="5">+05:00 (Karachi)</option>
+                      <option value="5.5">+05:30 (Mumbai/New Delhi)</option>
+                      <option value="5.75">+05:45 (Kathmandu)</option>
+                      <option value="6">+06:00 (Dhaka)</option>
+                      <option value="6.5">+06:30 (Yangon)</option>
+                      <option value="7">+07:00 (Bangkok/Jakarta)</option>
+                      <option value="8">+08:00 (Beijing/Singapore)</option>
+                      <option value="9">+09:00 (Tokyo/Seoul)</option>
+                      <option value="9.5">+09:30 (Adelaide)</option>
+                      <option value="10">+10:00 (Sydney/Vladivostok)</option>
+                      <option value="11">+11:00 (Solomon Islands)</option>
+                      <option value="12">+12:00 (Fiji/Auckland)</option>
+                    </select>
+                  </div>
+                </div>
+                
+                <div class="form-row align-end">
+                  <div class="form-group">
+                    <label for="astro-lat">Birth Latitude (Decimal Degrees)</label>
+                    <input type="number" id="astro-lat" value="51.5074" step="0.0001" min="-90" max="90" required class="input-cosmic">
+                  </div>
+                  <div class="form-group">
+                    <label for="astro-lon">Birth Longitude (Decimal Degrees)</label>
+                    <input type="number" id="astro-lon" value="-0.1278" step="0.0001" min="-180" max="180" required class="input-cosmic">
+                  </div>
+                  <button type="button" id="btn-detect-geo" class="btn-cosmic btn-outline" style="margin-bottom: 0.2rem; padding: 0.72rem;"><svg class="ico"><use href="#i-pin"/></svg><span id="geo-btn-label">GPS Detect</span></button>
+                </div>
+                
+                <button type="submit" class="btn-cosmic btn-gold" id="astro-submit-btn">Calculate Precise Chart</button>
+              </form>
+            </div>
+
+            <!-- Calculated Details Output -->
+            <div id="astro-output" class="card glass hidden">
+              <h3 class="card-title"><svg class="ico ico-accent"><use href="#i-sparkle"/></svg> Graha Placements (Sidereal)</h3>
+              <div class="placements-list" id="astro-placements-container">
+                <!-- Javascript will inject calculated Sun, Moon, and 8 planets positions here -->
+              </div>
+            </div>
+          </div>
+
+          <!-- Chart Visualizer & Compatibility -->
+          <div class="column-right flex-col gap-2">
+            <!-- Canvas Celestial Map -->
+            <div class="card glass flex-center flex-col">
+              <h3 class="card-title text-center"><svg class="ico ico-accent"><use href="#i-sparkle"/></svg> Rashi Chart (D1 Kundli)</h3>
+              <div class="canvas-wrapper">
+                <canvas id="birth-chart-canvas" width="380" height="380"></canvas>
+              </div>
+              <p class="faded text-center caption">North-Indian square chart. Numbers are Rashis (1 = Mesha); the Lagna sits in House 1 (top-centre), marked <strong>La</strong>. Grahas: Su Mo Ma Me Ju Ve Sa Ra Ke.</p>
+            </div>
+
+            <!-- Navamsa (D9) chart -->
+            <div class="card glass flex-center flex-col">
+              <h3 class="card-title text-center"><svg class="ico ico-accent"><use href="#i-sparkle"/></svg> Navamsa (D9)</h3>
+              <div class="canvas-wrapper">
+                <canvas id="navamsa-canvas" width="380" height="380"></canvas>
+              </div>
+              <p class="faded text-center caption">The ninth divisional chart — traditionally read for marriage, dharma, and the inner strength of each graha.</p>
+            </div>
+
+            <!-- Guna Milan (Kundli Matching) Widget -->
+            <div class="card glass">
+              <h3 class="card-title"><svg class="ico ico-accent"><use href="#i-rings"/></svg> Guna Milan — Kundli Matching</h3>
+              <p class="faded mb-1 mini">Ashtakoot compatibility (36 gunas) from each partner's Moon Nakshatra &amp; Rashi.</p>
+              <div class="milan-form">
+                <div class="form-row">
+                  <div class="form-group">
+                    <label for="milan-groom-nak">Groom — Nakshatra</label>
+                    <select id="milan-groom-nak" class="input-cosmic"></select>
+                  </div>
+                  <div class="form-group">
+                    <label for="milan-groom-rashi">Groom — Rashi</label>
+                    <select id="milan-groom-rashi" class="input-cosmic"></select>
+                  </div>
+                </div>
+                <div class="form-row">
+                  <div class="form-group">
+                    <label for="milan-bride-nak">Bride — Nakshatra</label>
+                    <select id="milan-bride-nak" class="input-cosmic"></select>
+                  </div>
+                  <div class="form-group">
+                    <label for="milan-bride-rashi">Bride — Rashi</label>
+                    <select id="milan-bride-rashi" class="input-cosmic"></select>
+                  </div>
+                </div>
+                <button id="calculate-milan-btn" class="btn-cosmic btn-violet">Match Kundlis</button>
+                <p class="faded mini mt-1">Tip: after calculating your chart above, the Groom fields prefill with your Moon's Nakshatra &amp; Rashi.</p>
+              </div>
+
+              <!-- Guna Milan Output -->
+              <div id="milan-output" class="hidden mt-2">
+                <div class="milan-score-header">
+                  <div class="milan-total"><span id="milan-total-val">0</span><small>/36</small></div>
+                  <div class="milan-verdict-box">
+                    <h4 id="milan-verdict">-</h4>
+                    <p id="milan-note" class="faded"></p>
+                    <p id="milan-dosha" class="text-violet"></p>
+                  </div>
+                </div>
+                <div id="milan-koota-list" class="milan-koota-list"></div>
+              </div>
+            </div>
+          </div>
+
+        </div>
+
+        <!-- Vimshottari Dasha (full width) -->
+        <div id="dasha-output" class="card glass mt-2 hidden">
+          <h3 class="card-title"><svg class="ico ico-accent"><use href="#i-hourglass"/></svg> Vimshottari Dasha — Planetary Periods</h3>
+          <p class="faded mb-1 mini">The 120-year cycle from your Janma Nakshatra. Your currently running Mahadasha (major period) and Antardasha (sub-period) are highlighted.</p>
+
+          <div class="dasha-current">
+            <div class="dasha-now-item">
+              <span class="dasha-now-lbl">Running Mahadasha</span>
+              <strong id="dasha-current-maha">-</strong>
+              <span id="dasha-maha-range" class="dasha-range"></span>
+            </div>
+            <div class="dasha-now-item">
+              <span class="dasha-now-lbl">Running Antardasha</span>
+              <strong id="dasha-current-antar">-</strong>
+              <span id="dasha-antar-range" class="dasha-range"></span>
+            </div>
+          </div>
+
+          <div class="grid-layout cols-2 mt-2">
+            <div>
+              <h4 class="text-glow mb-1">Mahadasha Timeline</h4>
+              <div id="dasha-maha-list" class="dasha-list"></div>
+            </div>
+            <div>
+              <h4 class="text-glow mb-1">Antardashas of the running Mahadasha</h4>
+              <div id="dasha-antar-list" class="dasha-list"></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Dosha Analysis -->
+        <div id="dosha-card" class="card glass mt-2 hidden">
+          <h3 class="card-title"><svg class="ico ico-accent"><use href="#i-alert"/></svg> Dosha Analysis</h3>
+          <p class="faded mb-1 mini">Common natal doshas detected from your chart (whole-sign method). Sade Sati uses today's transiting Saturn.</p>
+          <div id="dosha-list" class="dosha-list"></div>
+        </div>
+
+        <!-- Chandra Gochar for this chart's Janma Rashi -->
+        <div id="kundli-gochar-card" class="card glass mt-2 hidden" style="display:none">
+          <h3 class="card-title"><svg class="ico ico-accent"><use href="#i-sparkle"/></svg> Chandra Gochar — Today's Moon Transit</h3>
+          <div id="kundli-gochar-box" class="gochar-box">
+            <strong id="kundli-gochar-transit" class="text-gold"></strong>
+            <p id="kundli-gochar-text" class="mt-1"></p>
+          </div>
+        </div>
+      </section>
+
+      <!-- VIEW: Palmistry -->
+      <section id="palmistry-view" class="view-section">
+        <div class="section-header">
+          <h2 class="playfair">Hast Rekha — Palmistry</h2>
+          <p>Upload a palm photo or trace the major lines on the interactive scanner.</p>
+        </div>
+
+        <div class="grid-layout cols-2">
+          <!-- Canvas Overlay Panel -->
+          <div class="column-left card glass flex-center flex-col">
+            <h3 class="card-title text-center"><svg class="ico ico-accent"><use href="#i-hand"/></svg> Interactive Palm Mapper</h3>
+            
+            <div class="palm-canvas-container">
+              <canvas id="palm-canvas" width="400" height="500"></canvas>
+              <div id="canvas-loading" class="canvas-overlay hidden">Scanning palm lines…</div>
+            </div>
+
+            <!-- Upload and Point Controls -->
+            <div class="canvas-controls w-100 mt-2">
+              <div class="flex-row justify-between align-center mb-1 flex-wrap gap-05">
+                <label for="palm-upload" class="btn-cosmic btn-violet cursor-pointer">
+                  <span><svg class="ico"><use href="#i-upload"/></svg> Upload Hand Photo</span>
+                  <input type="file" id="palm-upload" accept="image/*" class="hidden">
+                </label>
+                <div class="flex-row gap-05">
+                  <button id="snap-palm-points" class="btn-cosmic btn-outline hidden">Snap to Creases</button>
+                  <button id="reset-palm-points" class="btn-cosmic btn-outline">Reset</button>
+                </div>
+              </div>
+              
+              <div class="flex-row align-center gap-05 mb-1 hidden" id="overlay-toggle-container">
+                <input type="checkbox" id="toggle-crease-overlay" class="cursor-pointer">
+                <label for="toggle-crease-overlay" class="cursor-pointer">Show Crease Detection Overlay (Sobel Filter)</label>
+              </div>
+              
+              <p class="faded text-center mini">Drag the orange rings to match your hand's lines. The reading updates dynamically based on point curvature and length.</p>
+            </div>
+          </div>
+
+          <!-- Configuration Controls & Reading Output -->
+          <div class="column-right flex-col gap-2">
+            <!-- Hand shape and Mount Settings -->
+            <div class="card glass">
+              <h3 class="card-title"><svg class="ico ico-accent"><use href="#i-hand"/></svg> Hand Shape & Mount Configurations</h3>
+              <div class="form-group">
+                <label for="hand-shape-select">Primary Hand Element</label>
+                <select id="hand-shape-select" class="input-cosmic">
+                  <option value="Earth">Earth Hand (Square palm, short fingers)</option>
+                  <option value="Air">Air Hand (Square palm, long fingers)</option>
+                  <option value="Fire">Fire Hand (Rectangular palm, short fingers)</option>
+                  <option value="Water">Water Hand (Rectangular palm, long fingers)</option>
+                </select>
+              </div>
+
+              <!-- Hand shape info popup display -->
+              <div id="hand-shape-info" class="mount-info-box">
+                <h4 id="hand-shape-title">Earth Hand</h4>
+                <p id="hand-shape-traits"></p>
+              </div>
+
+              <div class="form-group mt-1">
+                <label for="mount-select">Inspect Mount Details</label>
+                <select id="mount-select" class="input-cosmic">
+                  <option value="">-- Choose a Mount --</option>
+                </select>
+              </div>
+              <div id="mount-info" class="mount-info-box hidden">
+                <h4 id="mount-title"></h4>
+                <p id="mount-traits"></p>
+              </div>
+            </div>
+
+            <!-- Generative Output Reading -->
+            <div class="card glass flex-col flex-grow">
+              <h3 class="card-title"><svg class="ico ico-accent"><use href="#i-sparkle"/></svg> The Hand Reading Report</h3>
+              <div id="palm-reading-placeholder" class="flex-center flex-grow flex-col">
+                <span class="cosmic-loader"><svg class="ico"><use href="#i-hand"/></svg></span>
+                <p class="faded mt-1">Adjust points and select your hand shape, then press below to run the reading engine.</p>
+                <button id="btn-generate-palm" class="btn-cosmic btn-gold mt-1">Generate Reading</button>
+              </div>
+
+              <div id="palm-reading-results" class="hidden flex-col gap-2">
+                <div class="reading-block border-gold">
+                  <h4 class="text-glow"><svg class="ico"><use href="#i-heart"/></svg> Heart Line (Emotional Blueprint)</h4>
+                  <strong id="palm-heart-type" class="text-gold">Straight</strong>
+                  <p id="palm-heart-desc"></p>
+                </div>
+                <div class="reading-block border-violet">
+                  <h4><svg class="ico"><use href="#i-brain"/></svg> Head Line (Intellect & Mind)</h4>
+                  <strong id="palm-head-type" class="text-violet">Curved</strong>
+                  <p id="palm-head-desc"></p>
+                </div>
+                <div class="reading-block border-blue">
+                  <h4><svg class="ico"><use href="#i-pulse"/></svg> Life Line (Vitality & Cycles)</h4>
+                  <strong id="palm-life-type" class="text-blue">Strong</strong>
+                  <p id="palm-life-desc"></p>
+                </div>
+                <div class="reading-block border-white">
+                  <h4><svg class="ico"><use href="#i-compass"/></svg> Fate Line (Career & Destiny)</h4>
+                  <strong id="palm-fate-type" class="text-white">Faint</strong>
+                  <p id="palm-fate-desc"></p>
+                </div>
+                <button id="btn-re-palm" class="btn-cosmic btn-outline align-self-start">Recalibrate Lines</button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- VIEW: Numerology -->
+      <section id="numerology-view" class="view-section">
+        <div class="section-header">
+          <h2 class="playfair">Ank Jyotish — Vedic Numerology</h2>
+          <p>Your Mulank, Bhagyank and Naamank (Chaldean) with ruling grahas and number harmony.</p>
+        </div>
+
+        <div class="card glass mb-2">
+          <h3 class="card-title"><svg class="ico ico-accent"><use href="#i-hash"/></svg> Enter Your Details</h3>
+          <form id="numerology-form" class="cosmic-form">
+            <div class="form-row">
+              <div class="form-group flex-2">
+                <label for="num-name">Full Name at Birth</label>
+                <input type="text" id="num-name" placeholder="First Middle Last" required class="input-cosmic">
+              </div>
+              <div class="form-group flex-1">
+                <label for="num-dob">Date of Birth</label>
+                <input type="date" id="num-dob" required class="input-cosmic">
+              </div>
+            </div>
+            <button type="submit" class="btn-cosmic btn-gold">Calculate Numbers</button>
+          </form>
+        </div>
+
+        <!-- Calculations grids -->
+        <div id="numerology-results" class="hidden">
+          <!-- Vedic Numerology (Ank Jyotish) -->
+          <div class="card glass mt-2">
+            <h3 class="card-title"><svg class="ico ico-accent"><use href="#i-lotus"/></svg> Your Numbers</h3>
+            <p class="faded mb-1">Mulank (root number, from your birth day), Bhagyank (destiny number, from your full date), and Naamank (name number, Chaldean method) — each governed by a Navagraha planet.</p>
+
+            <div class="grid-layout cols-3 gap-1 vedic-core-grid">
+              <div class="card glass num-details-card">
+                <div class="num-card-header">
+                  <div>
+                    <h4>Mulank <small>(मूलांक)</small></h4>
+                    <small id="vedic-mulank-planet">Root / Psychic</small>
+                  </div>
+                  <div class="big-number text-glow" id="val-mulank">-</div>
+                </div>
+                <div class="num-math-breakdown" id="math-mulank">Math: -</div>
+              </div>
+
+              <div class="card glass num-details-card">
+                <div class="num-card-header">
+                  <div>
+                    <h4>Bhagyank <small>(भाग्यांक)</small></h4>
+                    <small id="vedic-bhagyank-planet">Destiny / Fortune</small>
+                  </div>
+                  <div class="big-number text-glow-violet" id="val-bhagyank">-</div>
+                </div>
+                <div class="num-math-breakdown" id="math-bhagyank">Math: -</div>
+              </div>
+
+              <div class="card glass num-details-card">
+                <div class="num-card-header">
+                  <div>
+                    <h4>Naamank <small>(नामांक)</small></h4>
+                    <small id="vedic-naamank-planet">Name / Chaldean</small>
+                  </div>
+                  <div class="big-number text-glow-blue" id="val-naamank">-</div>
+                </div>
+                <div class="num-math-breakdown" id="math-naamank">Math: -</div>
+              </div>
+            </div>
+
+            <!-- Mulank interpretation -->
+            <div class="reading-block border-gold mt-2">
+              <h4 class="text-glow" id="vedic-mulank-title">Your Root Number</h4>
+              <p id="vedic-mulank-desc"></p>
+            </div>
+
+            <!-- Mulank + Bhagyank harmony -->
+            <div class="reading-block border-violet mt-1">
+              <h4>Mulank &amp; Bhagyank Harmony</h4>
+              <p id="vedic-harmony-desc"></p>
+            </div>
+
+            <!-- Friendly / neutral / enemy numbers for the Mulank -->
+            <div class="mt-2">
+              <strong class="faded">Number relationships for Mulank <span id="vedic-rel-base">-</span>:</strong>
+              <div class="flex-row flex-wrap gap-1 mt-1">
+                <div><span class="rel-label text-gold">Friendly</span> <span id="vedic-friends" class="rel-nums"></span></div>
+                <div><span class="rel-label faded">Neutral</span> <span id="vedic-neutral" class="rel-nums"></span></div>
+                <div><span class="rel-label text-violet">Challenging</span> <span id="vedic-enemies" class="rel-nums"></span></div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+      </section>
+
+      <!-- VIEW: Tarot Sanctuary -->
+      <section id="tarot-view" class="view-section">
+        <div class="section-header">
+          <h2 class="playfair">Tarot</h2>
+          <p>Consult the Major & Minor Arcana. Shuffle the deck, choose your spread, and flip the cards.</p>
+        </div>
+
+        <div class="grid-layout cols-2">
+          
+          <!-- Card Drawing Desk -->
+          <div class="column-left flex-col gap-2">
+            
+            <!-- Desk Controls -->
+            <div class="card glass">
+              <h3 class="card-title"><svg class="ico ico-accent"><use href="#i-cards"/></svg> Draw Options</h3>
+              <div class="form-row align-end justify-between flex-wrap gap-1">
+                <div class="form-group min-w-150">
+                  <label for="tarot-spread-select">Choose Spread</label>
+                  <select id="tarot-spread-select" class="input-cosmic">
+                    <option value="1">Daily Guidance (1 Card)</option>
+                    <option value="3">Past, Present, Future (3 Cards)</option>
+                  </select>
+                </div>
+                <div class="flex-row gap-1">
+                  <button id="tarot-shuffle-btn" class="btn-cosmic btn-violet">Shuffle Deck</button>
+                  <button id="tarot-draw-btn" class="btn-cosmic btn-gold">Draw Spread</button>
+                </div>
+              </div>
+              <p id="deck-status" class="faded text-center mt-1 mini">Deck (78 cards) is shuffled and ready to draw.</p>
+            </div>
+
+            <!-- Card Slots Desk -->
+            <div class="card glass flex-grow flex-center flex-col min-h-350">
+              <div id="tarot-board" class="tarot-board">
+                <!-- Stacked Deck Representation -->
+                <div id="deck-pile" class="deck-pile">
+                  <div class="tarot-card-stack card-back"></div>
+                  <div class="tarot-card-stack card-back"></div>
+                  <div class="tarot-card-stack card-back"></div>
+                </div>
+                
+                <!-- Drawn Cards Placeholders -->
+                <div id="draw-slots" class="draw-slots-container hidden"></div>
+              </div>
+              <p class="faded mt-2 text-center mini" id="tarot-instruction">Choose a spread and click Draw Spread, then click on the card backs to flip them.</p>
+            </div>
+
+          </div>
+
+          <!-- Card Interpretations Output -->
+          <div class="column-right flex-col gap-2">
+            <div class="card glass flex-col flex-grow">
+              <h3 class="card-title"><svg class="ico ico-accent"><use href="#i-sparkle"/></svg> Divination Analysis</h3>
+              <div id="tarot-reading-placeholder" class="flex-center flex-grow flex-col">
+                <span class="cosmic-loader"><svg class="ico"><use href="#i-cards"/></svg></span>
+                <p class="faded mt-1">Draw cards on the left to reveal their guidance.</p>
+              </div>
+
+              <div id="tarot-reading-results" class="hidden flex-col gap-2 overflow-y-auto max-h-500">
+                <!-- Dynamic cards reading injected here -->
+              </div>
+            </div>
+          </div>
+
+        </div>
+      </section>
+
+    </main>
+
+  </div>
+
+  <script type="module" src="app.js?v=11"></script>
+</body>
+</html>
