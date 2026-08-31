@@ -6,5 +6,8 @@
   "scripts": {
     "serve": "python -m http.server 8123",
     "test": "node test/ephemeris.test.mjs"
+  },
+  "dependencies": {
+    "astronomy-engine": "^2.1.19"
   }
 }

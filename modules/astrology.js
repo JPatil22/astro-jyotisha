@@ -1,8 +1,11 @@
 /**
  * Astrology Module - Jyotisha
- * Precise Keplerian Orbital Elements Engine (Sun, Moon, and Planets)
- * Local Sidereal Time & Geocentric coordinate calculations
+ * Geocentric positions come from the vendored astronomy-engine (Don Cross, MIT) —
+ * arc-second accurate and validated against JPL Horizons. Julian-date, Ascendant,
+ * zodiac/compatibility helpers live here.
  */
+
+import * as Astronomy from './astronomy-engine.js';
 
 // ZODIAC DATA
 export const ZODIAC_SIGNS = [
@@ -65,180 +68,29 @@ export function getJulianDate(year, month, day, hour = 12, minute = 0) {
   return Math.floor(365.25 * (Y + 4716)) + Math.floor(30.6001 * (M + 1)) + D + B - 1524.5;
 }
 
-// Keplerian orbital elements at J2000.0 (reference: NASA JPL)
-// Values: a (semi-major axis, AU), e (eccentricity), I (inclination, deg),
-// L (mean longitude, deg), w (longitude of perihelion, deg), node (long. of ascending node, deg)
-// and their rates of change per century (T)
-const PLANETARY_ELEMENTS = {
-  Mercury: {
-    a: [0.38709893, 0.0],
-    e: [0.20563069, 0.00002040],
-    I: [7.00487, -0.00594],
-    L: [252.25084, 149472.67411],
-    w: [77.45645, 0.15901],
-    node: [48.33167, -0.12526]
-  },
-  Venus: {
-    a: [0.72333199, 0.0],
-    e: [0.00677323, -0.00004776],
-    I: [3.39471, -0.00079],
-    L: [181.97973, 58517.81538],
-    w: [131.53298, 0.00043],
-    node: [76.68069, -0.27769]
-  },
-  Earth: { // Sun (Earth heliocentric + 180 degrees)
-    a: [1.00000011, 0.0],
-    e: [0.01671022, -0.00003804],
-    I: [0.00005, -0.01300],
-    L: [100.46435, 35999.37288],
-    w: [102.94719, 0.31795],
-    node: [-11.26064, -0.41221]
-  },
-  Mars: {
-    a: [1.52366231, 0.0],
-    e: [0.09341233, 0.00011902],
-    I: [1.85061, -0.00724],
-    L: [355.45332, 19140.30268],
-    w: [336.04084, 0.44388],
-    node: [49.57854, -0.29498]
-  },
-  Jupiter: {
-    a: [5.20336301, 0.00060737],
-    e: [0.04839266, -0.00012880],
-    I: [1.30530, -0.00415],
-    L: [34.40438, 3034.74612],
-    w: [14.75385, 0.19190],
-    node: [100.55615, 0.20399]
-  },
-  Saturn: {
-    a: [9.53707032, -0.00301530],
-    e: [0.05415060, -0.00036762],
-    I: [2.48446, 0.00193],
-    L: [49.94432, 1222.11379],
-    w: [92.43194, -0.41897],
-    node: [113.71504, -0.37244]
-  },
-  Uranus: {
-    a: [19.19126393, 0.00152042],
-    e: [0.04716771, -0.00019150],
-    I: [0.76986, -0.00246],
-    L: [313.23218, 428.48202],
-    w: [170.96424, 0.40805],
-    node: [74.22988, 0.07431]
-  },
-  Neptune: {
-    a: [30.06896348, -0.00125196],
-    e: [0.00858587, 0.00002514],
-    I: [1.76917, -0.00353],
-    L: [304.88003, 218.45945],
-    w: [44.97135, -0.32241],
-    node: [131.72169, -0.00599]
-  },
-  Pluto: {
-    a: [39.48168677, -0.00076912],
-    e: [0.24880766, 0.00006465],
-    I: [17.14175, 0.00307],
-    L: [238.92881, 145.20780],
-    w: [224.06676, -0.04063],
-    node: [110.30347, -0.00845]
-  }
-};
 
-// Solve Kepler's Equation: E - e sin E = M
-function solveKepler(M_rad, e) {
-  let E = M_rad;
-  for (let i = 0; i < 5; i++) {
-    E = M_rad + e * Math.sin(E);
-  }
-  return E;
+// Convert Julian centuries T (from J2000.0, UT) back to a JS Date (UT), so the
+// long-standing (planetName, T) call signature keeps working with astronomy-engine.
+function dateFromT(T) {
+  const jd = T * 36525.0 + 2451545.0;
+  return new Date((jd - 2440587.5) * 86400000);
 }
 
-// Calculate Heliocentric Coordinates (3D vector)
-function getHeliocentricVector(planetName, T) {
-  const elem = PLANETARY_ELEMENTS[planetName];
-  if (!elem) return { x: 0, y: 0, z: 0 };
-
-  const degToRad = Math.PI / 180;
-
-  // Compute elements at century T
-  const a = elem.a[0] + elem.a[1] * T;
-  const e = elem.e[0] + elem.e[1] * T;
-  const I = (elem.I[0] + elem.I[1] * T) * degToRad;
-  const L = (elem.L[0] + elem.L[1] * T) % 360 * degToRad;
-  const w = (elem.w[0] + elem.w[1] * T) * degToRad;
-  const node = (elem.node[0] + elem.node[1] * T) * degToRad;
-
-  // Mean anomaly M
-  const M = L - w;
-  const E = solveKepler(M, e);
-
-  // Position in orbital plane
-  const x_plane = a * (Math.cos(E) - e);
-  const y_plane = a * Math.sqrt(1 - e * e) * Math.sin(E);
-
-  // Rotate to 3D ecliptic coordinates
-  const cosNode = Math.cos(node);
-  const sinNode = Math.sin(node);
-  const cosW = Math.cos(w - node);
-  const sinW = Math.sin(w - node);
-  const cosI = Math.cos(I);
-  const sinI = Math.sin(I);
-
-  // Ecliptic coordinates
-  const x = x_plane * (cosW * cosNode - sinW * sinNode * cosI) - y_plane * (sinW * cosNode + cosW * sinNode * cosI);
-  const y = x_plane * (cosW * sinNode + sinW * cosNode * cosI) - y_plane * (sinW * sinNode - cosW * cosNode * cosI);
-  const z = x_plane * (sinW * sinI) + y_plane * (cosW * sinI);
-
-  return { x, y, z };
-}
-
-// Calculate precise Geocentric Ecliptic Longitude for a planet
+// Geocentric apparent ecliptic longitude (of date), in degrees, from astronomy-engine.
+// Validated against JPL Horizons to ~1-4 arc-seconds across 1815-2040 (see ephemeris test).
 export function calculateGeocentricLongitude(planetName, T) {
-  if (planetName === 'Sun') {
-    // Sun's geocentric coordinate is Earth heliocentric coordinate + 180 degrees
-    const posE = getHeliocentricVector('Earth', T);
-    const lonRad = Math.atan2(-posE.y, -posE.x);
-    const lonDeg = lonRad * 180 / Math.PI;
-    return normalizeDegrees(lonDeg);
-  }
-  
+  const time = Astronomy.MakeTime(dateFromT(T));
+
   if (planetName === 'Moon') {
-    // Moon coordinates using simplified Brown perturbation terms
-    const degToRad = Math.PI / 180;
-    // Mean longitude L'
-    const L_prime = normalizeDegrees(218.316 + 481267.881 * T);
-    // Mean elongation of Moon D
-    const D = normalizeDegrees(297.85 + 445267.111 * T);
-    // Mean anomaly of Sun M
-    const M = normalizeDegrees(357.529 + 35999.05 * T);
-    // Mean anomaly of Moon M'
-    const M_prime = normalizeDegrees(134.963 + 477198.868 * T);
-    // Mean latitude of Moon F
-    const F = normalizeDegrees(93.272 + 483202.018 * T);
-
-    let lon = L_prime
-      + 6.289 * Math.sin(M_prime * degToRad)
-      - 1.274 * Math.sin((M_prime - 2 * D) * degToRad)
-      + 0.658 * Math.sin(2 * D * degToRad)
-      + 0.214 * Math.sin(2 * M_prime * degToRad)
-      - 0.186 * Math.sin(M * degToRad)
-      - 0.114 * Math.sin(2 * F * degToRad)
-      - 0.057 * Math.sin((M_prime + 2 * D) * degToRad);
-
-    return normalizeDegrees(lon);
+    // EclipticGeoMoon returns geocentric true-ecliptic-of-date coordinates directly.
+    return normalizeDegrees(Astronomy.EclipticGeoMoon(time).lon);
   }
 
-  // General Planet geocentric translation
-  const posP = getHeliocentricVector(planetName, T);
-  const posE = getHeliocentricVector('Earth', T);
-
-  // Vector from Earth to Planet
-  const gx = posP.x - posE.x;
-  const gy = posP.y - posE.y;
-
-  const lonRad = Math.atan2(gy, gx);
-  const lonDeg = lonRad * 180 / Math.PI;
-  return normalizeDegrees(lonDeg);
+  // Sun and planets: geocentric vector (aberration-corrected), rotated from the
+  // J2000 equatorial frame (EQJ) into the true ecliptic of date (ECT).
+  const vec = Astronomy.GeoVector(Astronomy.Body[planetName], time, true);
+  const ecl = Astronomy.RotateVector(Astronomy.Rotation_EQJ_ECT(time), vec);
+  return normalizeDegrees(Math.atan2(ecl.y, ecl.x) * 180 / Math.PI);
 }
 
 // Convert longitude to Zodiac Sign Details

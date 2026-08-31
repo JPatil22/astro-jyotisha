@@ -304,7 +304,7 @@ function loadUserProfile() {
     }
     state.user.name = name;
     state.user.dob = dob;
-    
+
     localStorage.setItem('cosmic_user_profile', JSON.stringify(state.user));
     populateSavedForms();
     updateDashboardStatus();

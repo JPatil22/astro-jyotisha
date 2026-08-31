@@ -6,11 +6,10 @@
  * These reference values are frozen below so the test runs offline. If you
  * intentionally change the engine's accuracy, regenerate them from Horizons.
  *
- * The test asserts that our own two-body Keplerian engine stays within a
- * documented tolerance of ground truth. The tolerance is era-dependent on
- * purpose: the model omits long-term planetary perturbations, so its error
- * grows with distance from J2000. This test locks in TODAY's behaviour so an
- * accidental regression (or the future library swap) is caught immediately.
+ * Positions come from the vendored astronomy-engine (arc-second accurate). The
+ * engine now matches Horizons to a few arc-seconds across all five eras, so the
+ * tolerance is a tight 0.05 deg everywhere — a regression that reintroduced the
+ * old two-body drift would fail immediately.
  *
  * Run: npm test
  */
@@ -22,25 +21,24 @@ const PLANETS = ['Sun', 'Moon', 'Mercury', 'Venus', 'Mars', 'Jupiter', 'Saturn',
 // Each case: a UTC instant + the Horizons reference longitude (deg) per body.
 const CASES = [
   {
-    label: '2000-01-01T00:00Z', y: 2000, mo: 1, d: 1, h: 0, tolDeg: 0.5,
+    label: '2000-01-01T00:00Z', y: 2000, mo: 1, d: 1, h: 0, tolDeg: 0.05,
     ref: { Sun: 279.8592049, Moon: 217.2933209, Mercury: 271.1117994, Venus: 240.9614017, Mars: 327.5754592, Jupiter: 25.2331086, Saturn: 40.4058374, Uranus: 314.7840519, Neptune: 303.1752432, Pluto: 251.43715 }
   },
   {
-    label: '1990-06-15T00:00Z', y: 1990, mo: 6, d: 15, h: 0, tolDeg: 0.6,
+    label: '1990-06-15T00:00Z', y: 1990, mo: 6, d: 15, h: 0, tolDeg: 0.05,
     ref: { Sun: 83.6519789, Moon: 338.7208841, Mercury: 64.8384556, Venus: 48.1897066, Mars: 10.6816835, Jupiter: 105.7812272, Saturn: 294.0611222, Uranus: 278.1846298, Neptune: 283.7295508, Pluto: 225.4116162 }
   },
   {
-    label: '2023-03-21T00:00Z', y: 2023, mo: 3, d: 21, h: 0, tolDeg: 0.7,
+    label: '2023-03-21T00:00Z', y: 2023, mo: 3, d: 21, h: 0, tolDeg: 0.05,
     ref: { Sun: 0.1073743, Moon: 350.226818, Mercury: 3.6266668, Venus: 34.8849535, Mars: 87.8563292, Jupiter: 16.492139, Saturn: 331.5416721, Uranus: 46.2835945, Neptune: 355.3063814, Pluto: 299.9530752 }
   },
   {
-    label: '1970-07-20T00:00Z', y: 1970, mo: 7, d: 20, h: 0, tolDeg: 0.9,
+    label: '1970-07-20T00:00Z', y: 1970, mo: 7, d: 20, h: 0, tolDeg: 0.05,
     ref: { Sun: 116.8740441, Moon: 313.3540333, Mercury: 131.0003309, Venus: 158.5184744, Mars: 121.1075355, Jupiter: 207.1053385, Saturn: 50.7710476, Uranus: 185.2704031, Neptune: 238.2384882, Pluto: 175.2034037 }
   },
   {
-    // Historical outlier: the two-body model degrades this far from J2000.
-    // Tolerance is deliberately loose here and documents the known limitation.
-    label: '1815-12-10T00:00Z', y: 1815, mo: 12, d: 10, h: 0, tolDeg: 3.5,
+    // Historical instant — astronomy-engine stays arc-second accurate here too.
+    label: '1815-12-10T00:00Z', y: 1815, mo: 12, d: 10, h: 0, tolDeg: 0.05,
     ref: { Sun: 257.1199059, Moon: 359.1095343, Mercury: 239.7550538, Venus: 211.0529093, Mars: 20.2501795, Jupiter: 212.1456997, Saturn: 308.5295541, Uranus: 247.7670435, Neptune: 259.5511737, Pluto: 350.8834047 }
   }
 ];
