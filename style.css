@@ -1420,6 +1420,31 @@ h1, h2, h3, h4 { font-weight: 700; letter-spacing: -0.01em; color: var(--color-t
 .method-list li { font-size: 0.85rem; color: var(--color-text-faded); line-height: 1.55; }
 .method-list li strong { color: var(--color-text-white); }
 
+/* Graha dignity / strength tags in placements */
+.dig-row { display: flex; flex-wrap: wrap; gap: 0.35rem; margin-top: 0.35rem; }
+.dig-tag {
+  font-size: 0.66rem; font-weight: 600; padding: 0.1rem 0.5rem; border-radius: 999px;
+  border: 1px solid transparent; white-space: nowrap;
+}
+.dig-good { background: rgba(16, 122, 87, 0.1); color: #0f766e; border-color: rgba(16,122,87,0.25); }
+.dig-bad { background: rgba(225, 29, 72, 0.1); color: #e11d48; border-color: rgba(225,29,72,0.25); }
+.dig-neutral { background: rgba(18, 23, 42, 0.05); color: var(--color-text-faded); border-color: var(--border-glass); }
+.dig-retro { background: rgba(124, 77, 188, 0.12); color: #7a4bc0; border-color: rgba(124,77,188,0.3); }
+.dig-combust { background: rgba(214, 138, 0, 0.12); color: #b06f12; border-color: rgba(214,138,0,0.3); }
+
+/* Guna Milan veto/cancellation alerts */
+.milan-alerts { display: flex; flex-direction: column; gap: 0.5rem; margin-top: 0.9rem; }
+.milan-alert {
+  padding: 0.6rem 0.8rem; border-radius: 10px; font-size: 0.82rem;
+  display: flex; flex-direction: column; gap: 0.15rem;
+}
+.milan-alert strong { display: flex; align-items: center; gap: 0.3rem; }
+.milan-alert span { color: var(--color-text-faded); font-size: 0.78rem; }
+.alert-severe { background: rgba(225, 29, 72, 0.08); border: 1px solid rgba(225,29,72,0.28); }
+.alert-severe strong { color: #e11d48; }
+.alert-ok { background: rgba(16, 122, 87, 0.07); border: 1px solid rgba(16,122,87,0.25); }
+.alert-ok strong { color: #0f766e; }
+
 /* SVG icon system (replaces emojis) */
 .ico {
   width: 1.1em;

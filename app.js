@@ -54,6 +54,8 @@ import { calculatePanchang, getChandraGochar } from './modules/jyotish-panchang.
 
 import { detectDoshas } from './modules/jyotish-dosha.js';
 
+import { analyzeGraha } from './modules/jyotish-strength.js';
+
 import { drawCards } from './modules/tarot.js';
 
 // ==========================================================================
@@ -572,6 +574,17 @@ function initAstrologySetup() {
       const nak = getNakshatra(sidereal);
       const d = GRAHA_DEFAULTS[graha];
 
+      // Strength: dignity, retrograde, combustion
+      const st = analyzeGraha(graha, sidereal, positions.Sun, T);
+      const badges = [];
+      if (st.dignity.status !== '—') {
+        const cls = /Exalted|Own|Moolatrikona|Friendly/.test(st.dignity.status) ? 'good'
+          : /Debilitated|Enemy/.test(st.dignity.status) ? 'bad' : 'neutral';
+        badges.push(`<span class="dig-tag dig-${cls}">${st.dignity.status}${st.dignity.short ? ` · ${st.dignity.short}` : ''}</span>`);
+      }
+      if (st.retrograde && graha !== 'Rahu' && graha !== 'Ketu') badges.push('<span class="dig-tag dig-retro">Retrograde</span>');
+      if (st.combust) badges.push('<span class="dig-tag dig-combust">Combust</span>');
+
       const row = document.createElement('div');
       row.className = 'placement-item';
       row.innerHTML = `
@@ -581,6 +594,7 @@ function initAstrologySetup() {
         <div class="pl-info">
           <strong>${graha} <small>(${d.sanskrit})</small>: ${rashi.positionStr}</strong>
           <p class="tagline" style="color: ${d.color}">Nakshatra ${nak.name} · pada ${nak.pada} · Rashi lord ${rashi.lord}</p>
+          ${badges.length ? `<div class="dig-row">${badges.join('')}</div>` : ''}
         </div>
       `;
       dom.astroPlacementsContainer.appendChild(row);
@@ -656,6 +670,16 @@ function initAstrologySetup() {
           <div class="koota-detail">${k.area} — ${k.detail}</div>
         `;
         list.appendChild(row);
+      });
+
+      // Veto checks & cancellations beyond the 36 gunas (Rajju, Vedha, cancellations)
+      const alertsBox = document.getElementById('milan-alerts');
+      alertsBox.innerHTML = '';
+      result.alerts.forEach(al => {
+        const el = document.createElement('div');
+        el.className = 'milan-alert ' + (al.severe ? 'alert-severe' : 'alert-ok');
+        el.innerHTML = `<strong>${al.severe ? '<svg class="ico"><use href="#i-alert"/></svg> ' : ''}${al.name}</strong><span>${al.detail}</span>`;
+        alertsBox.appendChild(el);
       });
 
       document.getElementById('milan-output').classList.remove('hidden');

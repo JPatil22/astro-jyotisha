@@ -42,8 +42,26 @@ for (const pair of [p1, same, bhak]) {
   check(pair.total >= 0 && pair.total <= 36, 'total within [0, 36]');
 }
 
+// --- Rajju dosha: nakshatras in the same limb (nak 0 and nak 9 share Pada) ---
+check(calculateGunaMilan({ nak: 0, rashi: 0 }, { nak: 9, rashi: 0 }).rajjuDosha === true, 'Rajju dosha when same limb');
+check(calculateGunaMilan({ nak: 0, rashi: 0 }, { nak: 1, rashi: 0 }).rajjuDosha === false, 'no Rajju when different limbs');
+
+// --- Vedha dosha: Ashwini (0) & Jyeshtha (17) are a vedha pair ---
+check(calculateGunaMilan({ nak: 0, rashi: 0 }, { nak: 17, rashi: 0 }).vedhaDosha === true, 'Vedha dosha for a vedha pair');
+check(calculateGunaMilan({ nak: 0, rashi: 0 }, { nak: 5, rashi: 0 }).vedhaDosha === false, 'no Vedha for a non-pair');
+
+// --- Bhakoot cancellation: Vrishabha(Venus) x Kanya(Mercury) is 5-9 dosha, lords are friends ---
+const bc = calculateGunaMilan({ nak: 3, rashi: 1 }, { nak: 12, rashi: 5 });
+check(bc.bhakootDosha === true, 'Bhakoot dosha present (5-9)');
+check(bc.alerts.some(a => a.name === 'Bhakoot Dosha cancelled'), 'Bhakoot dosha flagged cancelled (friendly lords)');
+
+// --- Nadi cancellation: identical charts share the Rashi lord ---
+const nc = calculateGunaMilan({ nak: 3, rashi: 1 }, { nak: 3, rashi: 1 });
+check(nc.nadiDosha === true, 'Nadi dosha present (same nadi)');
+check(nc.alerts.some(a => a.name === 'Nadi Dosha cancelled'), 'Nadi dosha flagged cancelled (same lord)');
+
 if (failures > 0) {
   console.error(`\n${failures} Guna Milan check(s) failed.`);
   process.exit(1);
 }
-console.log('All Guna Milan checks passed (kootas, doshas, maxima, totals).');
+console.log('All Guna Milan checks passed (kootas, doshas, maxima, totals, Rajju/Vedha, cancellations).');

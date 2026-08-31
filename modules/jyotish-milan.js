@@ -188,6 +188,29 @@ function scoreNadi(a, b) {
   return { points: na === nb ? 0 : 8, max: 8, detail: na === nb ? `Nadi dosha (both ${na})` : `${na} & ${nb}` };
 }
 
+// ---- Extra checks beyond the 36 gunas ----
+
+// Rajju: the 27 nakshatras cycle through 5 limbs, up then down, over 9 (repeated 3x).
+const RAJJU_LIMBS = ['Pada (feet)', 'Kati (waist)', 'Nabhi (navel)', 'Kantha (neck)', 'Sira (head)'];
+const RAJJU_PATTERN = [0, 1, 2, 3, 4, 3, 2, 1, 0];
+function rajjuOf(nak) {
+  const idx = nak % 9;
+  return {
+    limb: RAJJU_PATTERN[idx],
+    limbName: RAJJU_LIMBS[RAJJU_PATTERN[idx]],
+    direction: idx < 4 ? 'ascending' : idx > 4 ? 'descending' : 'apex'
+  };
+}
+
+// Vedha: mutually "piercing" nakshatra pairs (0-indexed). Chitra has no vedha partner.
+const VEDHA_PAIRS = [
+  [0, 17], [1, 16], [2, 15], [3, 14], [4, 22], [5, 21], [6, 20],
+  [7, 19], [8, 18], [9, 26], [10, 25], [11, 24], [12, 23]
+];
+function isVedha(a, b) {
+  return VEDHA_PAIRS.some(([x, y]) => (x === a && y === b) || (x === b && y === a));
+}
+
 // ---- Aggregate ----
 
 // Each person: { nak: 0-26, rashi: 0-11 }. `a` is the groom, `b` the bride.
@@ -214,5 +237,34 @@ export function calculateGunaMilan(a, b) {
   const nadiDosha = kootas[7].points === 0;
   const bhakootDosha = kootas[6].points === 0;
 
-  return { kootas, total, max: 36, verdict, note, nadiDosha, bhakootDosha };
+  // Extra veto checks the 36-point system omits, plus dosha cancellations.
+  const rajA = rajjuOf(a.nak), rajB = rajjuOf(b.nak);
+  const rajjuDosha = rajA.limb === rajB.limb;
+  const vedhaDosha = isVedha(a.nak, b.nak);
+
+  const lordA = RASHI_ATTR[a.rashi].lord, lordB = RASHI_ATTR[b.rashi].lord;
+  const lordsFriendly = lordA === lordB ||
+    (grahaRelation(lordA, lordB) === 'friend' && grahaRelation(lordB, lordA) === 'friend');
+  const bhakootCancelled = bhakootDosha && lordsFriendly;
+  const nadiCancelled = nadiDosha && lordA === lordB;
+
+  const alerts = [];
+  if (rajjuDosha) alerts.push({
+    name: 'Rajju Dosha', severe: true,
+    detail: `Both Moons share the ${rajA.limbName} rajju${rajA.direction === rajB.direction ? ' (same direction)' : ''} — a serious matching dosha traditionally treated as a veto.`
+  });
+  if (vedhaDosha) alerts.push({
+    name: 'Vedha Dosha', severe: true,
+    detail: 'The two birth-stars form a Vedha (mutually obstructing) pair — a serious matching dosha.'
+  });
+  if (bhakootCancelled) alerts.push({
+    name: 'Bhakoot Dosha cancelled', severe: false,
+    detail: 'Bhakoot dosha is present but nullified — the Rashi lords are the same or mutual friends.'
+  });
+  if (nadiCancelled) alerts.push({
+    name: 'Nadi Dosha cancelled', severe: false,
+    detail: 'Nadi dosha may be nullified — both share the same Rashi lord (pada-level cancellation not checked).'
+  });
+
+  return { kootas, total, max: 36, verdict, note, nadiDosha, bhakootDosha, rajjuDosha, vedhaDosha, alerts };
 }
