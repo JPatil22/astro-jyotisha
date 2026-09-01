@@ -1,5 +1,9 @@
 {
-  "buildCommand": "echo 'Deploying static site'",
-  "outputDirectory": ".",
-  "cleanUrls": true
+  "version": 2,
+  "builds": [
+    {
+      "src": "**/*",
+      "use": "@vercel/static"
+    }
+  ]
 }
