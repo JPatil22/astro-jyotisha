@@ -1768,16 +1768,9 @@ function initPalmistrySetup() {
   
   canvas.addEventListener('touchstart', handleStart);
   canvas.addEventListener('touchmove', handleMove);
-// Preload placeholder illustration (no analysis)
-const placeholderImg = new Image();
-placeholderImg.onload = () => {
-  // Store as placeholder; do not treat as user image
-  state.placeholderImg = placeholderImg;
-  redrawPalmCanvas();
-};
-placeholderImg.src = 'default_palm.png';
+  canvas.addEventListener('touchend', handleEnd);
 
-  // Initial draw
+  // Initial draw — shows clean hand outline, no analysis until user uploads
   redrawPalmCanvas();
 }
 

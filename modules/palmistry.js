@@ -464,43 +464,134 @@ export function snapPointToNearestEdge(px, py, edgeMap, searchRadius = 18) {
 // --------------------------------------------------------------------------
 
 export function drawDefaultHandOutline(ctx, width, height) {
-  ctx.strokeStyle = 'rgba(214, 138, 0, 0.45)';
-  ctx.lineWidth = 2.5;
+  // --- Dark background ---
+  ctx.fillStyle = '#0a0a14';
+  ctx.fillRect(0, 0, width, height);
 
+  // --- Clean anatomical hand silhouette (scaled to 400×500 canvas) ---
+  const sx = width / 400;
+  const sy = height / 500;
+  const s = (x, y) => [x * sx, y * sy];
+
+  // Subtle glow behind the hand
+  const gradient = ctx.createRadialGradient(
+    width * 0.5, height * 0.48, 20,
+    width * 0.5, height * 0.48, width * 0.48
+  );
+  gradient.addColorStop(0, 'rgba(214, 138, 0, 0.06)');
+  gradient.addColorStop(1, 'rgba(214, 138, 0, 0)');
+  ctx.fillStyle = gradient;
+  ctx.fillRect(0, 0, width, height);
+
+  ctx.save();
+
+  // Hand outline path — clean proportional fingers
   ctx.beginPath();
-  ctx.moveTo(170, 470);
-  ctx.bezierCurveTo(150, 480, 250, 480, 230, 470);
-  ctx.bezierCurveTo(270, 430, 350, 350, 330, 220);
-  ctx.bezierCurveTo(345, 170, 315, 120, 305, 150);
-  ctx.lineTo(295, 200);
-  ctx.bezierCurveTo(290, 130, 260, 80, 255, 115);
-  ctx.lineTo(250, 190);
-  ctx.bezierCurveTo(245, 100, 210, 60, 205, 95);
-  ctx.lineTo(200, 190);
-  ctx.bezierCurveTo(190, 110, 155, 100, 150, 130);
-  ctx.lineTo(145, 210);
-  ctx.bezierCurveTo(130, 240, 75, 270, 50, 310);
-  ctx.bezierCurveTo(30, 330, 40, 370, 70, 370);
-  ctx.bezierCurveTo(100, 370, 130, 350, 145, 390);
-  ctx.bezierCurveTo(155, 410, 160, 440, 170, 470);
-  ctx.fillStyle = '#ffffff';
+
+  // Wrist base
+  ctx.moveTo(...s(140, 480));
+  ctx.lineTo(...s(260, 480));
+
+  // Right palm edge → pinky
+  ctx.bezierCurveTo(...s(280, 460), ...s(305, 400), ...s(320, 340));
+  // Pinky finger
+  ctx.bezierCurveTo(...s(325, 310), ...s(330, 260), ...s(325, 220));
+  ctx.bezierCurveTo(...s(322, 205), ...s(310, 200), ...s(305, 215));
+  ctx.bezierCurveTo(...s(300, 240), ...s(298, 270), ...s(295, 295));
+
+  // Ring finger
+  ctx.bezierCurveTo(...s(290, 260), ...s(285, 195), ...s(280, 155));
+  ctx.bezierCurveTo(...s(278, 138), ...s(265, 132), ...s(260, 148));
+  ctx.bezierCurveTo(...s(255, 175), ...s(252, 210), ...s(250, 260));
+
+  // Middle finger (tallest)
+  ctx.bezierCurveTo(...s(248, 220), ...s(242, 140), ...s(235, 85));
+  ctx.bezierCurveTo(...s(232, 65), ...s(218, 60), ...s(215, 80));
+  ctx.bezierCurveTo(...s(210, 130), ...s(206, 190), ...s(203, 250));
+
+  // Index finger
+  ctx.bezierCurveTo(...s(200, 200), ...s(192, 140), ...s(185, 100));
+  ctx.bezierCurveTo(...s(182, 82), ...s(168, 78), ...s(165, 95));
+  ctx.bezierCurveTo(...s(160, 130), ...s(155, 185), ...s(152, 250));
+
+  // Thumb web → thumb
+  ctx.bezierCurveTo(...s(140, 280), ...s(115, 300), ...s(95, 310));
+  ctx.bezierCurveTo(...s(72, 320), ...s(55, 310), ...s(48, 285));
+  ctx.bezierCurveTo(...s(42, 265), ...s(50, 245), ...s(65, 255));
+  ctx.bezierCurveTo(...s(80, 265), ...s(95, 280), ...s(105, 310));
+
+  // Left palm edge back to wrist
+  ctx.bezierCurveTo(...s(110, 360), ...s(115, 410), ...s(120, 450));
+  ctx.bezierCurveTo(...s(125, 465), ...s(132, 475), ...s(140, 480));
+
+  ctx.closePath();
+
+  // Translucent fill
+  ctx.fillStyle = 'rgba(255, 255, 255, 0.04)';
   ctx.fill();
+
+  // Elegant thin stroke
+  ctx.strokeStyle = 'rgba(214, 138, 0, 0.35)';
+  ctx.lineWidth = 1.5;
   ctx.stroke();
 
-  // Highlight 7 mounts
-  Object.keys(PALM_MOUNTS).forEach(k => {
-    const m = PALM_MOUNTS[k];
-    ctx.fillStyle = 'rgba(214, 138, 0, 0.08)';
+  // --- Subtle crease lines ---
+  ctx.strokeStyle = 'rgba(214, 138, 0, 0.15)';
+  ctx.lineWidth = 1;
+  ctx.setLineDash([4, 6]);
+
+  // Heart line
+  ctx.beginPath();
+  ctx.moveTo(...s(150, 265));
+  ctx.bezierCurveTo(...s(200, 248), ...s(260, 252), ...s(310, 270));
+  ctx.stroke();
+
+  // Head line
+  ctx.beginPath();
+  ctx.moveTo(...s(150, 305));
+  ctx.bezierCurveTo(...s(200, 295), ...s(250, 300), ...s(300, 320));
+  ctx.stroke();
+
+  // Life line
+  ctx.beginPath();
+  ctx.moveTo(...s(148, 268));
+  ctx.bezierCurveTo(...s(135, 320), ...s(140, 390), ...s(160, 460));
+  ctx.stroke();
+
+  // Fate line
+  ctx.beginPath();
+  ctx.moveTo(...s(210, 470));
+  ctx.bezierCurveTo(...s(215, 380), ...s(220, 310), ...s(225, 250));
+  ctx.stroke();
+
+  ctx.setLineDash([]);
+  ctx.restore();
+
+  // --- Mount labels ---
+  ctx.font = `bold ${Math.round(8 * sx)}px "Inter", sans-serif`;
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'middle';
+
+  const mounts = [
+    ['Jupiter', 157, 250], ['Saturn', 210, 250], ['Sun', 255, 255],
+    ['Mercury', 300, 280], ['Venus', 140, 400], ['Moon', 260, 420],
+    ['MarsLower', 130, 320], ['MarsUpper', 290, 310]
+  ];
+  mounts.forEach(([name, x, y]) => {
+    ctx.fillStyle = 'rgba(214, 138, 0, 0.12)';
     ctx.beginPath();
-    ctx.arc(m.center.x, m.center.y, 16, 0, 2 * Math.PI);
+    ctx.arc(x * sx, y * sy, 14 * sx, 0, 2 * Math.PI);
     ctx.fill();
 
-    ctx.fillStyle = 'rgba(180, 110, 20, 0.75)';
-    ctx.font = 'bold 9px "Courier New", monospace';
-    ctx.textAlign = 'center';
-    ctx.textBaseline = 'middle';
-    ctx.fillText(k, m.center.x, m.center.y);
+    ctx.fillStyle = 'rgba(214, 138, 0, 0.5)';
+    ctx.fillText(name, x * sx, y * sy);
   });
+
+  // --- Upload prompt ---
+  ctx.fillStyle = 'rgba(255, 255, 255, 0.35)';
+  ctx.font = `${Math.round(13 * sx)}px "Inter", sans-serif`;
+  ctx.textAlign = 'center';
+  ctx.fillText('Upload your palm photo to begin', width / 2, height - 22 * sy);
 }
 
 // --------------------------------------------------------------------------
