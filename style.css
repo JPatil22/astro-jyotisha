@@ -1980,3 +1980,31 @@ h4 .ico { margin-right: 0.3rem; vertical-align: -0.16em; }
   color: var(--color-text-white);
 }
 
+/* Quote Card High-Contrast Styling */
+.quote-card {
+  text-align: center;
+  padding: 1.5rem 2rem;
+  background: #ffffff;
+  border: 1px solid var(--border-glass);
+  border-radius: 14px;
+  box-shadow: 0 4px 16px rgba(18, 23, 42, 0.04);
+  margin-top: 1.5rem;
+}
+.quote-text {
+  font-family: var(--font-family-serif);
+  font-size: 1.25rem;
+  font-style: italic;
+  color: #0f172a !important;
+  line-height: 1.6;
+  margin-bottom: 0.4rem;
+  font-weight: 500;
+}
+.quote-author {
+  display: block;
+  font-size: 0.82rem;
+  font-weight: 700;
+  color: var(--color-gold) !important;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
