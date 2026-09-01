@@ -5,7 +5,7 @@
   "type": "module",
   "scripts": {
     "dev": "node server.mjs",
-    "start": "node server.mjs",
+    "build": "echo 'Static build ready'",
     "test": "node test/stress_worldwide.test.mjs && node test/palmistry.test.mjs && node test/ephemeris.test.mjs"
   },
   "dependencies": {
