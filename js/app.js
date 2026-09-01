@@ -12,7 +12,7 @@ import {
   drawBirthChart, 
   ZODIAC_SIGNS,
   PLANET_DEFAULTS
-} from './modules/astrology.js';
+} from '../modules/astrology.js';
 
 import { 
   DEFAULT_PALM_POINTS, 
@@ -31,13 +31,13 @@ import {
   validatePalmImageAndPose,
   rotateImage,
   flipImage
-} from './modules/palmistry.js';
+} from '../modules/palmistry.js';
 
 import {
   calculateVedicProfile,
   VEDIC_NUMBER_INFO,
   NUMBER_RELATIONS
-} from './modules/vedic-numerology.js';
+} from '../modules/vedic-numerology.js';
 
 import {
   VEDIC_GRAHAS,
@@ -60,22 +60,22 @@ import {
   getHouseFromLagna,
   isManglikHouse,
   getNavamsaLongitude
-} from './modules/jyotish.js';
+} from '../modules/jyotish.js';
 
-import { calculateGunaMilan } from './modules/jyotish-milan.js';
+import { calculateGunaMilan } from '../modules/jyotish-milan.js';
 import { 
   calculateVimshottariDasha,
   computeAntardashas,
   computePratyantardashas,
   computeSookshmaDashas
-} from './modules/jyotish-dasha.js';
-import { calculatePanchang, getChandraGochar } from './modules/jyotish-panchang.js';
-import { detectDoshas } from './modules/jyotish-dosha.js';
-import { analyzeGraha } from './modules/jyotish-strength.js';
-import { calculateAshtakavarga } from './modules/jyotish-ashtakavarga.js';
-import { calculateBhavaChalit } from './modules/jyotish-bhavas.js';
-import { calculateGrahaDrishti } from './modules/jyotish-drishti.js';
-import { searchOfflineCities, searchCitiesLive } from './modules/geocoding.js';
+} from '../modules/jyotish-dasha.js';
+import { calculatePanchang, getChandraGochar } from '../modules/jyotish-panchang.js';
+import { detectDoshas } from '../modules/jyotish-dosha.js';
+import { analyzeGraha } from '../modules/jyotish-strength.js';
+import { calculateAshtakavarga } from '../modules/jyotish-ashtakavarga.js';
+import { calculateBhavaChalit } from '../modules/jyotish-bhavas.js';
+import { calculateGrahaDrishti } from '../modules/jyotish-drishti.js';
+import { searchOfflineCities, searchCitiesLive } from '../modules/geocoding.js';
 import { 
   getSavedCharts, 
   saveChartToVault, 
@@ -83,8 +83,8 @@ import {
   exportVaultJSON, 
   importVaultJSON,
   generatePrintableReportHTML
-} from './modules/vault.js';
-import { drawCards } from './modules/tarot.js';
+} from '../modules/vault.js';
+import { drawCards } from '../modules/tarot.js';
 
 // ==========================================================================
 // APP STATE & CONSTANTS
