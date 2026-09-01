@@ -4,7 +4,7 @@
   "description": "Jyotisha — Vedic Astrology, Palmistry, Numerology, and Tarot.",
   "type": "module",
   "scripts": {
-    "dev": "node server.mjs",
+    "dev": "node tools/server.mjs",
     "test": "node test/stress_worldwide.test.mjs && node test/palmistry.test.mjs && node test/ephemeris.test.mjs"
   },
   "dependencies": {
