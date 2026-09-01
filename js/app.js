@@ -1768,21 +1768,14 @@ function initPalmistrySetup() {
   
   canvas.addEventListener('touchstart', handleStart);
   canvas.addEventListener('touchmove', handleMove);
-  // Preload real human palm photograph as default high-res background
-  const defaultImg = new Image();
-  defaultImg.onload = async () => {
-    if (!state.palmImage) {
-      state.palmImage = defaultImg;
-      state.edgeMap = runSobelCreaseDetection(defaultImg, dom.palmCanvas.width, dom.palmCanvas.height);
-      dom.snapPalmPoints.classList.remove('hidden');
-      dom.overlayToggleContainer.classList.remove('hidden');
-      dom.toggleCreaseOverlay.checked = true;
-      redrawPalmCanvas();
-      await triggerMediaPipeDetection(defaultImg);
-      runPalmAnalysis();
-    }
-  };
-  defaultImg.src = 'default_palm.jpg';
+// Preload placeholder illustration (no analysis)
+const placeholderImg = new Image();
+placeholderImg.onload = () => {
+  // Store as placeholder; do not treat as user image
+  state.placeholderImg = placeholderImg;
+  redrawPalmCanvas();
+};
+placeholderImg.src = 'default_palm.png';
 
   // Initial draw
   redrawPalmCanvas();
