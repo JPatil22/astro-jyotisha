@@ -17,8 +17,8 @@
   --color-indigo: #4f46e5;
   --color-cyan: #2563eb;                  /* info blue (replaces neon cyan) */
   --color-rose: #e11d48;                  /* red / rose */
-  --color-text-white: #141a2e;           /* near-black navy — primary text */
-  --color-text-faded: #6b7280;           /* slate gray — body text */
+  --color-text-white: #0f172a;           /* Deep obsidian navy — primary high-contrast text */
+  --color-text-faded: #334155;           /* Slate 700 — deep accessible contrast for body & subtitles */
 
   --shadow-gold: 0 4px 20px rgba(18, 23, 42, 0.06);
   --shadow-violet: 0 10px 30px rgba(91, 82, 224, 0.14);

@@ -1984,15 +1984,28 @@ function runPalmAnalysis() {
   // Automated Mounts Breakdown Report
   const mountsReportGrid = document.getElementById('palm-mounts-report-grid');
   if (mountsReportGrid && mounts) {
+    const mountSvgMap = {
+      Jupiter: 'i-jupiter',
+      Saturn: 'i-saturn',
+      Sun: 'i-sun',
+      Mercury: 'i-mercury',
+      MarsUpper: 'i-mars',
+      MarsLower: 'i-mars',
+      Venus: 'i-venus',
+      Moon: 'i-moon'
+    };
     mountsReportGrid.innerHTML = Object.entries(mounts).map(([key, m]) => `
       <div class="mount-item-row flex-row justify-between align-center p-05" style="border-radius: 8px; background: rgba(18,23,42,0.03); border: 1px solid var(--border-glass); margin-bottom: 0.35rem;">
         <div class="flex-col gap-01" style="width: 100%;">
           <div class="flex-row justify-between align-center">
-            <strong style="color: var(--color-gold); font-size: 0.88rem;">${PALM_MOUNTS[key]?.symbol || '•'} ${PALM_MOUNTS[key]?.name || key}</strong>
+            <div class="flex-row align-center gap-05">
+              <svg class="ico" style="color: var(--color-gold); width: 16px; height: 16px;"><use href="#${mountSvgMap[key] || 'i-sun'}"/></svg>
+              <strong style="color: var(--color-text-white); font-size: 0.88rem;">${PALM_MOUNTS[key]?.name || key}</strong>
+            </div>
             <span class="mini" style="padding: 0.15rem 0.45rem; border-radius: 4px; font-weight:700; background: ${m.score >= 85 ? 'rgba(16,185,129,0.1)' : 'rgba(249,115,22,0.1)'}; color: ${m.score >= 85 ? '#059669' : '#ea580c'};">${m.cushion} (${m.score}%)</span>
           </div>
-          <span class="mini" style="color: #0f766e; font-weight: 500;">📍 ${m.location}</span>
-          <span class="mini faded" style="line-height: 1.35; margin-top: 0.15rem;">${m.summary}</span>
+          <span class="mini" style="color: #0f766e; font-weight: 600; display: inline-flex; align-items: center; gap: 0.25rem; margin-top: 0.2rem;"><svg class="ico" style="width:12px;height:12px;"><use href="#i-pin"/></svg> ${m.location}</span>
+          <span class="mini faded" style="line-height: 1.35; margin-top: 0.15rem; color: var(--color-text-faded);">${m.summary}</span>
         </div>
       </div>
     `).join('');
