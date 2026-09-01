@@ -434,9 +434,9 @@ function renderChoghadiyaList() {
 
 function renderPanchang() {
   const sky = computeTodaySky();
-  const lat = state.user.lat || 28.6139;
-  const lon = state.user.lon || 77.2090;
-  const tz = state.user.tz || 5.5;
+  const lat = parseFloat(state.user.lat) || 28.6139;
+  const lon = parseFloat(state.user.lon) || 77.2090;
+  const tz = parseFloat(state.user.tz) || 5.5;
 
   const p = calculatePanchang(sky.now, sky.sunSid, sky.moonSid, sky.sunTrop, sky.moonTrop, lat, lon, tz);
   cachedPanchangData = p;

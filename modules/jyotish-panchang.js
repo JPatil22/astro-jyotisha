@@ -68,6 +68,7 @@ export function getKarana(moonLongitude, sunLongitude) {
 // PRECISE SUNRISE, SUNSET, DAY/NIGHT DURATION
 // --------------------------------------------------------------------------
 function formatDecimalHours(hours) {
+  if (hours === undefined || isNaN(hours)) return '06:00:00';
   let h = normalizeDegrees(hours * 15) / 15; // wrap 0-24
   const hh = Math.floor(h);
   const mm = Math.floor((h - hh) * 60);
@@ -123,7 +124,7 @@ export function calculateSunRiseSet(date, latitude, longitude, timezoneOffset) {
 
   // Local mean time of sunrise and sunset
   const T_rise = (360 - (H_rise * 15)) / 15 + pRise.RA - (0.06571 * t_rise) - 6.622;
-  const T_set = (H_set * 15) / 15 + pSet.Set_RA || (H_set + pSet.RA - (0.06571 * t_set) - 6.622);
+  const T_set = (H_set * 15) / 15 + pSet.RA - (0.06571 * t_set) - 6.622;
 
   // Convert to local civil time with timezone offset
   const UT_rise = (T_rise - lngHour + 24) % 24;
