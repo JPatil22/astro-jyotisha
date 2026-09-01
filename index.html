@@ -13,6 +13,10 @@
   
   <!-- CSS Stylesheet -->
   <link rel="stylesheet" href="style.css">
+
+  <!-- Google MediaPipe Hands AI (Client-Side WASM/WebGL Landmark Tracker) -->
+  <script src="https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils/camera_utils.js" crossorigin="anonymous"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@mediapipe/hands/hands.js" crossorigin="anonymous"></script>
 </head>
 <body>
 
@@ -152,16 +156,34 @@
           </div>
         </div>
 
-        <!-- Panchang + Rashifal -->
+        <!-- Panchang + Muhurta + Rashifal -->
         <div class="grid-layout cols-2 mb-2">
           <div class="card glass">
-            <h3 class="card-title"><svg class="ico ico-accent"><use href="#i-sun"/></svg> Today's Panchang</h3>
+            <div class="flex-row justify-between align-center mb-05 flex-wrap">
+              <h3 class="card-title"><svg class="ico ico-accent"><use href="#i-sun"/></svg> Today's Panchang &amp; Muhurta</h3>
+              <span id="panchang-sun-times" class="badge">Sunrise: --:-- | Sunset: --:--</span>
+            </div>
             <div class="panchang-grid">
               <div class="panchang-item"><span class="panchang-lbl">Vara</span><strong id="panchang-vara">-</strong></div>
               <div class="panchang-item"><span class="panchang-lbl">Tithi</span><strong id="panchang-tithi">-</strong></div>
               <div class="panchang-item"><span class="panchang-lbl">Nakshatra</span><strong id="panchang-nakshatra">-</strong></div>
               <div class="panchang-item"><span class="panchang-lbl">Yoga</span><strong id="panchang-yoga">-</strong></div>
               <div class="panchang-item"><span class="panchang-lbl">Karana</span><strong id="panchang-karana">-</strong></div>
+              <div class="panchang-item"><span class="panchang-lbl">Abhijit Muhurta</span><strong id="panchang-abhijit" class="text-gold">-</strong></div>
+              <div class="panchang-item"><span class="panchang-lbl">Rahu Kaalam</span><strong id="panchang-rahu" style="color: #e11d48;">-</strong></div>
+              <div class="panchang-item"><span class="panchang-lbl">Yamaganda</span><strong id="panchang-yama" style="color: #e11d48;">-</strong></div>
+            </div>
+
+            <!-- Choghadiya Mini Viewer -->
+            <div class="mt-1" style="border-top: 1px solid var(--border-glass); padding-top: 0.75rem;">
+              <div class="flex-row justify-between align-center mb-05">
+                <span class="mini faded"><strong>Today's Choghadiya:</strong></span>
+                <div class="flex-row gap-05">
+                  <button type="button" id="btn-choghadiya-day" class="btn-cosmic btn-outline input-sm active">Day</button>
+                  <button type="button" id="btn-choghadiya-night" class="btn-cosmic btn-outline input-sm">Night</button>
+                </div>
+              </div>
+              <div id="choghadiya-list" class="flex-row gap-05 flex-wrap"></div>
             </div>
           </div>
 
@@ -200,7 +222,7 @@
       <section id="astrology-view" class="view-section">
         <div class="section-header">
           <h2 class="playfair">Vedic Kundli — Sidereal Birth Chart</h2>
-          <p>Your Jyotish chart: the 9 grahas, Rashi, and Nakshatra in the sidereal zodiac (Lahiri ayanamsa).</p>
+          <p>Your comprehensive Jyotish portal: Shodashvarga (D1–D60), Ashtakavarga (337 bindus), Graha Drishti, Bhava Chalit, and 4-Level Vimshottari Dasha.</p>
         </div>
 
         <div class="grid-layout cols-2">
@@ -220,6 +242,17 @@
                     <input type="date" id="astro-dob" required class="input-cosmic">
                   </div>
                 </div>
+
+                <!-- City Search Autocomplete -->
+                <div class="form-group" style="position: relative;">
+                  <label for="astro-city-search">Birth City / Location (150+ Offline &amp; Global Live Lookup)</label>
+                  <div class="row-inline">
+                    <input type="text" id="astro-city-search" placeholder="Type city e.g. Delhi, London, New York..." class="input-cosmic" autocomplete="off">
+                    <button type="button" id="btn-detect-geo" class="btn-cosmic btn-outline" style="white-space: nowrap;"><svg class="ico"><use href="#i-pin"/></svg><span id="geo-btn-label">GPS</span></button>
+                  </div>
+                  <div id="city-autocomplete-list" class="autocomplete-dropdown hidden"></div>
+                </div>
+
                 <div class="form-row">
                   <div class="form-group">
                     <label for="astro-time">Time of Birth</label>
@@ -263,19 +296,22 @@
                   </div>
                 </div>
                 
-                <div class="form-row align-end">
+                <div class="form-row">
                   <div class="form-group">
-                    <label for="astro-lat">Birth Latitude (Decimal Degrees)</label>
-                    <input type="number" id="astro-lat" value="51.5074" step="0.0001" min="-90" max="90" required class="input-cosmic">
+                    <label for="astro-lat">Birth Latitude</label>
+                    <input type="number" id="astro-lat" value="28.6139" step="0.0001" min="-90" max="90" required class="input-cosmic">
                   </div>
                   <div class="form-group">
-                    <label for="astro-lon">Birth Longitude (Decimal Degrees)</label>
-                    <input type="number" id="astro-lon" value="-0.1278" step="0.0001" min="-180" max="180" required class="input-cosmic">
+                    <label for="astro-lon">Birth Longitude</label>
+                    <input type="number" id="astro-lon" value="77.2090" step="0.0001" min="-180" max="180" required class="input-cosmic">
                   </div>
-                  <button type="button" id="btn-detect-geo" class="btn-cosmic btn-outline" style="margin-bottom: 0.2rem; padding: 0.72rem;"><svg class="ico"><use href="#i-pin"/></svg><span id="geo-btn-label">GPS Detect</span></button>
                 </div>
                 
-                <button type="submit" class="btn-cosmic btn-gold" id="astro-submit-btn">Calculate Precise Chart</button>
+                <div class="flex-row gap-05 flex-wrap mt-1">
+                  <button type="submit" class="btn-cosmic btn-gold flex-grow" id="astro-submit-btn">Calculate Precise Kundli</button>
+                  <button type="button" class="btn-cosmic btn-outline" id="btn-save-to-vault">💾 Save to Vault</button>
+                  <button type="button" class="btn-cosmic btn-outline" id="btn-open-vault">📂 Chart Vault</button>
+                </div>
               </form>
             </div>
 
@@ -288,24 +324,56 @@
             </div>
           </div>
 
-          <!-- Chart Visualizer & Compatibility -->
+          <!-- Chart Visualizer & Controls -->
           <div class="column-right flex-col gap-2">
-            <!-- Canvas Celestial Map -->
+            
+            <!-- Universal Kundli Viewer with Style & Varga Switchers -->
             <div class="card glass flex-center flex-col">
-              <h3 class="card-title text-center"><svg class="ico ico-accent"><use href="#i-sparkle"/></svg> Rashi Chart (D1 Kundli)</h3>
+              <div class="chart-header-controls w-100 flex-row justify-between align-center mb-1 flex-wrap gap-05">
+                <div class="flex-row align-center gap-05">
+                  <label for="chart-style-select" class="mini faded">Style:</label>
+                  <select id="chart-style-select" class="input-cosmic input-sm">
+                    <option value="north" selected>North Indian (Diamond)</option>
+                    <option value="south">South Indian (Box)</option>
+                    <option value="east">East Indian (Bengali)</option>
+                  </select>
+                </div>
+                <div class="flex-row align-center gap-05 flex-wrap">
+                  <label for="varga-select" class="mini faded">Varga:</label>
+                  <select id="varga-select" class="input-cosmic input-sm">
+                    <option value="D1" selected>D1 — Rashi (Root)</option>
+                    <option value="D2">D2 — Hora (Wealth)</option>
+                    <option value="D3">D3 — Drekkana (Siblings/Energy)</option>
+                    <option value="D4">D4 — Chaturthamsha (Property)</option>
+                    <option value="D7">D7 — Saptamsha (Progeny)</option>
+                    <option value="D9">D9 — Navamsa (Marriage/Dharma)</option>
+                    <option value="D10">D10 — Dashamsha (Career/Fame)</option>
+                    <option value="D12">D12 — Dwadashamsha (Parents)</option>
+                    <option value="D16">D16 — Shodashamsha (Vehicles)</option>
+                    <option value="D20">D20 — Vimsamsha (Spirituality)</option>
+                    <option value="D24">D24 — Chaturvimsamsha (Education)</option>
+                    <option value="D27">D27 — Saptavimsamsha (Strength)</option>
+                    <option value="D30">D30 — Trimsamsha (Afflictions)</option>
+                    <option value="D60">D60 — Shashtiamsha (Root Karma)</option>
+                  </select>
+                  <button type="button" id="btn-print-report" class="btn-cosmic btn-outline input-sm">🖨️ Print / PDF</button>
+                </div>
+              </div>
+
+              <h3 class="card-title text-center" id="active-varga-title"><svg class="ico ico-accent"><use href="#i-sparkle"/></svg> Rashi Chart (D1)</h3>
               <div class="canvas-wrapper">
                 <canvas id="birth-chart-canvas" width="380" height="380"></canvas>
               </div>
-              <p class="faded text-center caption">North-Indian square chart. Numbers are Rashis (1 = Mesha); the Lagna sits in House 1 (top-centre), marked <strong>La</strong>. Grahas: Su Mo Ma Me Ju Ve Sa Ra Ke.</p>
+              <p class="faded text-center caption" id="active-varga-desc">Root natal chart: physical body, life overview, and general destiny.</p>
             </div>
 
-            <!-- Navamsa (D9) chart -->
+            <!-- Navamsa (D9) Companion Chart -->
             <div class="card glass flex-center flex-col">
-              <h3 class="card-title text-center"><svg class="ico ico-accent"><use href="#i-sparkle"/></svg> Navamsa (D9)</h3>
+              <h3 class="card-title text-center"><svg class="ico ico-accent"><use href="#i-sparkle"/></svg> Navamsa (D9) — Marriage &amp; Soul</h3>
               <div class="canvas-wrapper">
                 <canvas id="navamsa-canvas" width="380" height="380"></canvas>
               </div>
-              <p class="faded text-center caption">The ninth divisional chart — traditionally read for marriage, dharma, and the inner strength of each graha.</p>
+              <p class="faded text-center caption">The 9th divisional chart — essential for marriage, dharma, and planetary inner strength.</p>
             </div>
 
             <!-- Guna Milan (Kundli Matching) Widget -->
@@ -355,40 +423,91 @@
 
         </div>
 
-        <!-- Vimshottari Dasha (full width) -->
+        <!-- Ashtakavarga & Bhava Chalit Section -->
+        <div id="ashtakavarga-card" class="card glass mt-2 hidden">
+          <h3 class="card-title"><svg class="ico ico-accent"><use href="#i-grid"/></svg> Ashtakavarga &amp; Bhava Chalit Analysis</h3>
+          <p class="faded mb-1 mini">Parashari Sarvashtakavarga (337 total bindus) evaluating house strength &amp; transit auspiciousness, plus Sripati Bhava Chalit house shifts.</p>
+
+          <div class="grid-layout cols-2 mt-1">
+            <!-- Sarvashtakavarga (SAV) Grid -->
+            <div>
+              <h4 class="text-glow mb-1">Sarvashtakavarga (SAV Points per House)</h4>
+              <div id="sav-table-container" class="ashtakavarga-container"></div>
+            </div>
+
+            <!-- Bhava Chalit Shift Summary -->
+            <div>
+              <h4 class="text-glow mb-1">Bhava Chalit (Sripati House Cusps)</h4>
+              <div id="bhava-chalit-container" class="bhava-chalit-list"></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Parashari Graha Drishti (Aspects) Matrix -->
+        <div id="drishti-card" class="card glass mt-2 hidden">
+          <h3 class="card-title"><svg class="ico ico-accent"><use href="#i-pulse"/></svg> Parashari Graha Drishti (Planetary Aspects)</h3>
+          <p class="faded mb-1 mini">Special Parashari full aspects (Mars 4/7/8, Jupiter 5/7/9, Saturn 3/7/10, Rahu/Ketu 5/7/9) and mutual planetary aspects.</p>
+          <div id="drishti-content" class="drishti-grid"></div>
+        </div>
+
+        <!-- Deep Multi-Level Vimshottari Dasha (Levels 1 to 4) -->
         <div id="dasha-output" class="card glass mt-2 hidden">
-          <h3 class="card-title"><svg class="ico ico-accent"><use href="#i-hourglass"/></svg> Vimshottari Dasha — Planetary Periods</h3>
-          <p class="faded mb-1 mini">The 120-year cycle from your Janma Nakshatra. Your currently running Mahadasha (major period) and Antardasha (sub-period) are highlighted.</p>
+          <div class="flex-row justify-between align-center flex-wrap gap-05">
+            <h3 class="card-title"><svg class="ico ico-accent"><use href="#i-hourglass"/></svg> Deep Vimshottari Dasha Timeline (Levels 1 to 4)</h3>
+            <span class="badge">Pratyantar &amp; Sookshma</span>
+          </div>
+          <p class="faded mb-1 mini">Hierarchical planetary periods from birth Nakshatra. Click any Mahadasha or Antardasha to drill down into sub-sub-periods (Pratyantar &amp; Sookshma).</p>
 
           <div class="dasha-current">
             <div class="dasha-now-item">
-              <span class="dasha-now-lbl">Running Mahadasha</span>
+              <span class="dasha-now-lbl">1. Mahadasha</span>
               <strong id="dasha-current-maha">-</strong>
               <span id="dasha-maha-range" class="dasha-range"></span>
             </div>
             <div class="dasha-now-item">
-              <span class="dasha-now-lbl">Running Antardasha</span>
+              <span class="dasha-now-lbl">2. Antardasha</span>
               <strong id="dasha-current-antar">-</strong>
               <span id="dasha-antar-range" class="dasha-range"></span>
+            </div>
+            <div class="dasha-now-item">
+              <span class="dasha-now-lbl">3. Pratyantardasha</span>
+              <strong id="dasha-current-pratyantar">-</strong>
+              <span id="dasha-pratyantar-range" class="dasha-range"></span>
+            </div>
+            <div class="dasha-now-item">
+              <span class="dasha-now-lbl">4. Sookshma Dasha</span>
+              <strong id="dasha-current-sookshma">-</strong>
+              <span id="dasha-sookshma-range" class="dasha-range"></span>
             </div>
           </div>
 
           <div class="grid-layout cols-2 mt-2">
             <div>
-              <h4 class="text-glow mb-1">Mahadasha Timeline</h4>
+              <h4 class="text-glow mb-1">Mahadasha Cycle (120 Years)</h4>
               <div id="dasha-maha-list" class="dasha-list"></div>
             </div>
             <div>
-              <h4 class="text-glow mb-1">Antardashas of the running Mahadasha</h4>
+              <h4 class="text-glow mb-1" id="antar-list-title">Antardashas</h4>
               <div id="dasha-antar-list" class="dasha-list"></div>
+            </div>
+          </div>
+
+          <div class="grid-layout cols-2 mt-2">
+            <div>
+              <h4 class="text-glow mb-1" id="pratyantar-list-title">Pratyantardashas (Sub-sub-period)</h4>
+              <div id="dasha-pratyantar-list" class="dasha-list"></div>
+            </div>
+            <div>
+              <h4 class="text-glow mb-1" id="sookshma-list-title">Sookshma Dashas (Sub-sub-sub-period)</h4>
+              <div id="dasha-sookshma-list" class="dasha-list"></div>
             </div>
           </div>
         </div>
 
         <!-- Dosha Analysis -->
         <div id="dosha-card" class="card glass mt-2 hidden">
-          <h3 class="card-title"><svg class="ico ico-accent"><use href="#i-alert"/></svg> Dosha Analysis</h3>
-          <p class="faded mb-1 mini">Common natal doshas detected from your chart (whole-sign method). Sade Sati uses today's transiting Saturn.</p>
+          <h3 class="card-title"><svg class="ico ico-accent"><use href="#i-alert"/></svg> Natal Dosha Analysis</h3>
+          <p class="faded mb-1 mini">Comprehensive dosha screening including Manglik, Kaal Sarp, Sade Sati, Kemadruma, Guru Chandal, Grahan, Angarak, Pitra, Shrapit, and Daridra.</p>
           <div id="dosha-list" class="dosha-list"></div>
         </div>
 
@@ -405,47 +524,147 @@
       <!-- VIEW: Palmistry -->
       <section id="palmistry-view" class="view-section">
         <div class="section-header">
-          <h2 class="playfair">Hast Rekha — Palmistry</h2>
-          <p>Upload a palm photo or trace the major lines on the interactive scanner.</p>
+          <h2 class="playfair">Hast Rekha Studio — Next-Gen Palmistry</h2>
+          <p>Multi-pass computer vision crease detection, 9 major &amp; minor lines, 7 planetary mounts, and life/career age milestone mapping.</p>
         </div>
 
-        <div class="grid-layout cols-2">
-          <!-- Canvas Overlay Panel -->
-          <div class="column-left card glass flex-center flex-col">
-            <h3 class="card-title text-center"><svg class="ico ico-accent"><use href="#i-hand"/></svg> Interactive Palm Mapper</h3>
-            
-            <div class="palm-canvas-container">
-              <canvas id="palm-canvas" width="400" height="500"></canvas>
-              <div id="canvas-loading" class="canvas-overlay hidden">Scanning palm lines…</div>
+        <!-- Archetype Presets & Hand Shape Identifier -->
+        <div class="card glass mb-2">
+          <div class="flex-row justify-between align-center flex-wrap gap-05 mb-1">
+            <div>
+              <span class="mini faded"><strong>Hand Element Matrix (Samudrika Shastra):</strong></span>
+              <p class="mini faded" style="margin: 0.2rem 0 0 0;">How to identify your hand in 10 seconds: compare palm length vs. width, and finger length vs. palm.</p>
             </div>
-
-            <!-- Upload and Point Controls -->
-            <div class="canvas-controls w-100 mt-2">
-              <div class="flex-row justify-between align-center mb-1 flex-wrap gap-05">
-                <label for="palm-upload" class="btn-cosmic btn-violet cursor-pointer">
-                  <span><svg class="ico"><use href="#i-upload"/></svg> Upload Hand Photo</span>
-                  <input type="file" id="palm-upload" accept="image/*" class="hidden">
-                </label>
-                <div class="flex-row gap-05">
-                  <button id="snap-palm-points" class="btn-cosmic btn-outline hidden">Snap to Creases</button>
-                  <button id="reset-palm-points" class="btn-cosmic btn-outline">Reset</button>
-                </div>
-              </div>
-              
-              <div class="flex-row align-center gap-05 mb-1 hidden" id="overlay-toggle-container">
-                <input type="checkbox" id="toggle-crease-overlay" class="cursor-pointer">
-                <label for="toggle-crease-overlay" class="cursor-pointer">Show Crease Detection Overlay (Sobel Filter)</label>
-              </div>
-              
-              <p class="faded text-center mini">Drag the orange rings to match your hand's lines. The reading updates dynamically based on point curvature and length.</p>
+            <div id="palm-ai-telemetry" class="badge hidden" style="background: rgba(16, 185, 129, 0.12); color: #059669; border-color: rgba(16, 185, 129, 0.3);">
+              AI Auto-Detected: --
             </div>
           </div>
 
-          <!-- Configuration Controls & Reading Output -->
+          <!-- 4-Quadrant Visual Grid for Easy User Identification -->
+          <div class="hand-element-grid">
+            <div class="element-choice-card active" data-preset="Earth">
+              <div class="elem-head">
+                <span class="elem-icon">🌍</span>
+                <strong>Earth (Prithvi)</strong>
+              </div>
+              <div class="elem-formula">Square Palm + Short Fingers</div>
+              <p class="elem-desc">Palm width $\approx$ length; sturdy, direct, grounded, practical builder.</p>
+            </div>
+
+            <div class="element-choice-card" data-preset="Air">
+              <div class="elem-head">
+                <span class="elem-icon">💨</span>
+                <strong>Air (Vayu)</strong>
+              </div>
+              <div class="elem-formula">Square Palm + Long Fingers</div>
+              <p class="elem-desc">Palm width $\approx$ length; slender fingers, intellectual, articulate, analytical.</p>
+            </div>
+
+            <div class="element-choice-card" data-preset="Fire">
+              <div class="elem-head">
+                <span class="elem-icon">🔥</span>
+                <strong>Fire (Agni)</strong>
+              </div>
+              <div class="elem-formula">Long Palm + Short Fingers</div>
+              <p class="elem-desc">Rectangular palm longer than width; dynamic, energetic, visionary leader.</p>
+            </div>
+
+            <div class="element-choice-card" data-preset="Water">
+              <div class="elem-head">
+                <span class="elem-icon">🌊</span>
+                <strong>Water (Jala)</strong>
+              </div>
+              <div class="elem-formula">Long Palm + Long Fingers</div>
+              <p class="elem-desc">Rectangular palm + long graceful fingers; deeply intuitive, empathetic, artistic.</p>
+            </div>
+          </div>
+        </div>
+
+        <div class="grid-layout cols-2">
+          <!-- Canvas Overlay & Studio Controls -->
+          <div class="column-left card glass flex-center flex-col">
+            <!-- Interactive Crease Studio Header -->
+            <div class="flex-row justify-between align-center w-100 mb-1 flex-wrap gap-05">
+              <h3 class="card-title text-center" style="margin:0;"><svg class="ico ico-accent"><use href="#i-hand"/></svg> Interactive Crease Studio</h3>
+              <div class="flex-row gap-05">
+                <button type="button" id="btn-open-palm-guide" class="btn-cosmic btn-outline input-sm">📸 Photo Guide</button>
+                <select id="palm-line-filter" class="input-cosmic input-sm">
+                  <option value="all" selected>All 9 Lines</option>
+                  <option value="major">Major Lines Only</option>
+                  <option value="minor">Minor Lines Only</option>
+                </select>
+              </div>
+            </div>
+
+            <!-- Palm Quality & Pose Validation Alert Banner -->
+            <div id="palm-quality-alert" class="palm-alert-banner hidden">
+              <div class="flex-row justify-between align-center gap-05">
+                <div class="flex-row align-center gap-05">
+                  <span id="palm-alert-icon">⚠️</span>
+                  <div>
+                    <strong id="palm-alert-title">Pose Warning</strong>
+                    <p id="palm-alert-msg" class="mini" style="margin:0;"></p>
+                  </div>
+                </div>
+                <button type="button" id="btn-auto-fix-pose" class="btn-cosmic btn-gold input-sm hidden">Auto-Fix</button>
+              </div>
+            </div>
+            
+            <div class="palm-canvas-container" style="position: relative;">
+              <canvas id="palm-canvas" width="400" height="500"></canvas>
+              <video id="palm-video-stream" width="400" height="500" class="hidden" autoplay playsinline style="border-radius: 12px; object-fit: cover;"></video>
+              <div id="canvas-loading" class="canvas-overlay hidden">Processing palm creases…</div>
+            </div>
+
+            <!-- Upload, Camera, Rotation and Point Controls -->
+            <div class="canvas-controls w-100 mt-2">
+              <div class="flex-row justify-between align-center mb-1 flex-wrap gap-05">
+                <div class="flex-row gap-05 flex-wrap">
+                  <label for="palm-upload" class="btn-cosmic btn-violet cursor-pointer">
+                    <span><svg class="ico"><use href="#i-upload"/></svg> Upload Photo</span>
+                    <input type="file" id="palm-upload" accept="image/*" class="hidden">
+                  </label>
+                  <button type="button" id="btn-palm-camera" class="btn-cosmic btn-outline"><svg class="ico"><use href="#i-sparkle"/></svg> <span id="camera-btn-text">Camera Snapshot</span></button>
+                  <button type="button" id="btn-snap-camera-frame" class="btn-cosmic btn-gold hidden">Capture Photo</button>
+                  <button type="button" id="btn-palm-ai-detect" class="btn-cosmic btn-gold"><svg class="ico"><use href="#i-sparkle"/></svg> ⚡ AI Auto-Detect</button>
+                </div>
+                <div class="flex-row gap-05">
+                  <button type="button" id="btn-rotate-palm" class="btn-cosmic btn-outline input-sm" title="Rotate photo 90 degrees">🔄 Rotate 90°</button>
+                  <button type="button" id="btn-flip-palm" class="btn-cosmic btn-outline input-sm" title="Mirror flip horizontally">↔️ Flip</button>
+                  <button id="snap-palm-points" class="btn-cosmic btn-outline hidden">Snap</button>
+                  <button id="reset-palm-points" class="btn-cosmic btn-outline input-sm">Reset</button>
+                </div>
+              </div>
+              
+              <!-- Visualization mode toggles -->
+              <div class="flex-row align-center gap-1 mb-1 flex-wrap" id="overlay-toggle-container">
+                <div class="flex-row align-center gap-05">
+                  <input type="checkbox" id="toggle-crease-overlay" class="cursor-pointer">
+                  <label for="toggle-crease-overlay" class="cursor-pointer mini faded">Detected Crease Overlay</label>
+                </div>
+                <div class="flex-row align-center gap-05">
+                  <input type="checkbox" id="toggle-heatmap-overlay" class="cursor-pointer">
+                  <label for="toggle-heatmap-overlay" class="cursor-pointer mini faded">Crease Heatmap</label>
+                </div>
+                <div class="flex-row align-center gap-05">
+                  <input type="checkbox" id="toggle-landmarks-overlay" class="cursor-pointer" checked>
+                  <label for="toggle-landmarks-overlay" class="cursor-pointer mini faded">AI Landmarks Skeleton</label>
+                </div>
+                <div class="flex-row align-center gap-05">
+                  <input type="checkbox" id="toggle-age-milestones" class="cursor-pointer" checked>
+                  <label for="toggle-age-milestones" class="cursor-pointer mini faded">Show Age Milestones</label>
+                </div>
+              </div>
+              
+              <p class="faded text-center mini">Drag orange rings to calibrate your hand lines. Point snapping aligns curves to detected creases.</p>
+            </div>
+          </div>
+
+          <!-- Configuration Controls & Diagnostic Scoreboard -->
           <div class="column-right flex-col gap-2">
             <!-- Hand shape and Mount Settings -->
             <div class="card glass">
-              <h3 class="card-title"><svg class="ico ico-accent"><use href="#i-hand"/></svg> Hand Shape & Mount Configurations</h3>
+              <h3 class="card-title"><svg class="ico ico-accent"><use href="#i-hand"/></svg> Hand Element &amp; Planetary Mounts</h3>
               <div class="form-group">
                 <label for="hand-shape-select">Primary Hand Element</label>
                 <select id="hand-shape-select" class="input-cosmic">
@@ -462,48 +681,160 @@
                 <p id="hand-shape-traits"></p>
               </div>
 
-              <div class="form-group mt-1">
-                <label for="mount-select">Inspect Mount Details</label>
-                <select id="mount-select" class="input-cosmic">
-                  <option value="">-- Choose a Mount --</option>
-                </select>
-              </div>
-              <div id="mount-info" class="mount-info-box hidden">
-                <h4 id="mount-title"></h4>
-                <p id="mount-traits"></p>
+              <div class="mt-1">
+                <div class="flex-row justify-between align-center mb-05">
+                  <label><strong>7 Planetary Mounts (Tap to Inspect Cushion):</strong></label>
+                  <span class="mini faded">Click any mount below</span>
+                </div>
+
+                <!-- 8 Interactive Mount Pills with Anatomical Locations -->
+                <div class="mount-pills-grid">
+                  <button type="button" class="mount-pill-btn active" data-mount="Jupiter">
+                    <div class="mount-pill-head"><span>♃</span> Jupiter (Guru)</div>
+                    <span class="mount-pill-loc">Below Index Finger</span>
+                  </button>
+                  <button type="button" class="mount-pill-btn" data-mount="Saturn">
+                    <div class="mount-pill-head"><span>♄</span> Saturn (Shani)</div>
+                    <span class="mount-pill-loc">Below Middle Finger</span>
+                  </button>
+                  <button type="button" class="mount-pill-btn" data-mount="Sun">
+                    <div class="mount-pill-head"><span>☉</span> Sun (Surya)</div>
+                    <span class="mount-pill-loc">Below Ring Finger</span>
+                  </button>
+                  <button type="button" class="mount-pill-btn" data-mount="Mercury">
+                    <div class="mount-pill-head"><span>☿</span> Mercury (Budha)</div>
+                    <span class="mount-pill-loc">Below Pinky Finger</span>
+                  </button>
+                  <button type="button" class="mount-pill-btn" data-mount="MarsUpper">
+                    <div class="mount-pill-head"><span>♂</span> Upper Mars</div>
+                    <span class="mount-pill-loc">Outer Edge Below Pinky</span>
+                  </button>
+                  <button type="button" class="mount-pill-btn" data-mount="MarsLower">
+                    <div class="mount-pill-head"><span>♂</span> Lower Mars</div>
+                    <span class="mount-pill-loc">Thumb/Index Webbing</span>
+                  </button>
+                  <button type="button" class="mount-pill-btn" data-mount="Venus">
+                    <div class="mount-pill-head"><span>♀</span> Venus (Shukra)</div>
+                    <span class="mount-pill-loc">Fleshy Base of Thumb</span>
+                  </button>
+                  <button type="button" class="mount-pill-btn" data-mount="Moon">
+                    <div class="mount-pill-head"><span>☽</span> Luna (Chandra)</div>
+                    <span class="mount-pill-loc">Lower Outer Heel of Palm</span>
+                  </button>
+                </div>
+
+                <!-- Selected Mount Details Card -->
+                <div id="mount-info" class="mount-detail-card">
+                  <div class="mount-detail-title">
+                    <h4 id="mount-title">Mount of Jupiter (Guru)</h4>
+                    <span id="mount-loc-badge" class="mount-loc-badge">Under the Index Finger</span>
+                  </div>
+                  <div class="mount-section-row">
+                    <strong>Governs:</strong> <span id="mount-key-themes">Ambition, leadership, nobility, honor & self-respect</span>
+                  </div>
+                  <div class="mount-section-row">
+                    <strong>Elevated / High Cushion:</strong> <span id="mount-elevated">Natural born leader, high confidence, magnanimous, commands respect.</span>
+                  </div>
+                  <div class="mount-section-row">
+                    <strong>Flat / Underdeveloped:</strong> <span id="mount-flat">Reserved, prefers supporting roles, modest personal ambition.</span>
+                  </div>
+                  <div class="mount-section-row mini faded mt-05" style="border-top: 1px dashed rgba(18,23,42,0.1); padding-top: 0.35rem;">
+                    <strong>Vedic Graha:</strong> <span id="mount-graha">Jupiter (Brihaspati) · Yellow Sapphire / Topaz</span>
+                  </div>
+                </div>
               </div>
             </div>
 
-            <!-- Generative Output Reading -->
+            <!-- Generative Diagnostic Scoreboard & Reading Output -->
             <div class="card glass flex-col flex-grow">
-              <h3 class="card-title"><svg class="ico ico-accent"><use href="#i-sparkle"/></svg> The Hand Reading Report</h3>
+              <h3 class="card-title"><svg class="ico ico-accent"><use href="#i-sparkle"/></svg> Hast Rekha Diagnostic Report</h3>
               <div id="palm-reading-placeholder" class="flex-center flex-grow flex-col">
                 <span class="cosmic-loader"><svg class="ico"><use href="#i-hand"/></svg></span>
-                <p class="faded mt-1">Adjust points and select your hand shape, then press below to run the reading engine.</p>
-                <button id="btn-generate-palm" class="btn-cosmic btn-gold mt-1">Generate Reading</button>
+                <p class="faded mt-1">Adjust line coordinates or select an archetype preset, then press below to generate the diagnostic reading.</p>
+                <button id="btn-generate-palm" class="btn-cosmic btn-gold mt-1">Generate Diagnostic Reading</button>
               </div>
 
               <div id="palm-reading-results" class="hidden flex-col gap-2">
+                
+                <!-- Diagnostic Meters -->
+                <div class="diagnostic-scoreboard">
+                  <div class="diag-meter">
+                    <span class="diag-lbl">Vitality &amp; Health</span>
+                    <strong id="diag-vitality-val">85%</strong>
+                    <div class="koota-bar"><div id="diag-vitality-bar" class="koota-fill" style="width: 85%;"></div></div>
+                  </div>
+                  <div class="diag-meter">
+                    <span class="diag-lbl">Intellect &amp; Clarity</span>
+                    <strong id="diag-intellect-val">88%</strong>
+                    <div class="koota-bar"><div id="diag-intellect-bar" class="koota-fill" style="width: 88%;"></div></div>
+                  </div>
+                  <div class="diag-meter">
+                    <span class="diag-lbl">Emotional Harmony</span>
+                    <strong id="diag-emotional-val">80%</strong>
+                    <div class="koota-bar"><div id="diag-emotional-bar" class="koota-fill" style="width: 80%;"></div></div>
+                  </div>
+                  <div class="diag-meter">
+                    <span class="diag-lbl">Destiny &amp; Career Drive</span>
+                    <strong id="diag-destiny-val">84%</strong>
+                    <div class="koota-bar"><div id="diag-destiny-bar" class="koota-fill" style="width: 84%;"></div></div>
+                  </div>
+                </div>
+
+                <!-- Life & Career Timeline Box -->
+                <div class="milestones-box">
+                  <h4 class="text-glow mb-05"><svg class="ico ico-accent"><use href="#i-hourglass"/></svg> Key Life &amp; Career Age Milestones</h4>
+                  <div id="palm-milestones-summary" class="mini faded">
+                    <div>• <strong>Age 21:</strong> Early Career Foundation (Fate Line Entry)</div>
+                    <div>• <strong>Age 35:</strong> Head Line Intersection (Strategic Career Pivot)</div>
+                    <div>• <strong>Age 49:</strong> Heart Line Intersection (Peak Authority &amp; Consolidation)</div>
+                  </div>
+                </div>
+
+                <!-- Line Reading Blocks -->
                 <div class="reading-block border-gold">
                   <h4 class="text-glow"><svg class="ico"><use href="#i-heart"/></svg> Heart Line (Emotional Blueprint)</h4>
                   <strong id="palm-heart-type" class="text-gold">Straight</strong>
                   <p id="palm-heart-desc"></p>
                 </div>
                 <div class="reading-block border-violet">
-                  <h4><svg class="ico"><use href="#i-brain"/></svg> Head Line (Intellect & Mind)</h4>
+                  <h4><svg class="ico"><use href="#i-brain"/></svg> Head Line (Intellect &amp; Mind)</h4>
                   <strong id="palm-head-type" class="text-violet">Curved</strong>
                   <p id="palm-head-desc"></p>
                 </div>
                 <div class="reading-block border-blue">
-                  <h4><svg class="ico"><use href="#i-pulse"/></svg> Life Line (Vitality & Cycles)</h4>
+                  <h4><svg class="ico"><use href="#i-pulse"/></svg> Life Line (Vitality &amp; Constitution)</h4>
                   <strong id="palm-life-type" class="text-blue">Strong</strong>
                   <p id="palm-life-desc"></p>
                 </div>
                 <div class="reading-block border-white">
-                  <h4><svg class="ico"><use href="#i-compass"/></svg> Fate Line (Career & Destiny)</h4>
+                  <h4><svg class="ico"><use href="#i-compass"/></svg> Fate Line (Career &amp; Purpose)</h4>
                   <strong id="palm-fate-type" class="text-white">Faint</strong>
                   <p id="palm-fate-desc"></p>
                 </div>
+
+                <!-- Automated Planetary Mounts Breakdown -->
+                <div class="reading-block border-gold">
+                  <h4 class="text-glow mb-05"><svg class="ico ico-accent"><use href="#i-sparkle"/></svg> Automated Planetary Mounts Analysis</h4>
+                  <p class="mini faded mb-1">AI-calculated cushion elevation and planetary energy distribution across the 7 hand mounts:</p>
+                  <div id="palm-mounts-report-grid" class="flex-col gap-05">
+                    <!-- Dynamically populated mounts -->
+                  </div>
+                </div>
+
+                <!-- Minor Lines Readings -->
+                <div id="minor-lines-readings" class="flex-col gap-1">
+                  <div class="reading-block border-gold" id="reading-sun-block">
+                    <h4><svg class="ico ico-accent"><use href="#i-sun"/></svg> Sun Line (Apollo — Fame &amp; Wealth)</h4>
+                    <strong id="palm-sun-type" class="text-gold">Prominent</strong>
+                    <p id="palm-sun-desc" class="mini faded"></p>
+                  </div>
+                  <div class="reading-block border-violet" id="reading-mercury-block">
+                    <h4><svg class="ico ico-accent"><use href="#i-sparkle"/></svg> Mercury Line (Health &amp; Commerce)</h4>
+                    <strong id="palm-mercury-type" class="text-violet">Clear</strong>
+                    <p id="palm-mercury-desc" class="mini faded"></p>
+                  </div>
+                </div>
+
                 <button id="btn-re-palm" class="btn-cosmic btn-outline align-self-start">Recalibrate Lines</button>
               </div>
             </div>
@@ -669,6 +1000,77 @@
 
         </div>
       </section>
+
+      <!-- MODAL: Palm Photo Guide & Checklist -->
+      <div id="palm-guide-modal" class="modal-overlay hidden">
+        <div class="modal-card card glass" style="max-width: 550px;">
+          <div class="flex-row justify-between align-center mb-1">
+            <h3 class="card-title"><svg class="ico ico-accent"><use href="#i-hand"/></svg> How to Capture the Perfect Palm Photo</h3>
+            <button type="button" id="btn-close-palm-guide" class="btn-cosmic btn-outline input-sm">✕ Close</button>
+          </div>
+          <p class="mini faded mb-1">Follow these 4 simple steps to ensure AI landmark tracking and sub-pixel crease detection are 100% accurate:</p>
+
+          <div class="flex-col gap-1">
+            <div class="guide-item flex-row gap-05 align-center p-05" style="background: rgba(16, 185, 129, 0.08); border-radius: 8px; border: 1px solid rgba(16, 185, 129, 0.25);">
+              <span style="font-size: 1.4rem;">✅</span>
+              <div>
+                <strong style="color: #059669;">1. Palm Facing Camera (Palmar Side)</strong>
+                <p class="mini" style="margin:0; color: var(--color-text-faded);">Show your palm lines, NOT the back of your hand or fingernails.</p>
+              </div>
+            </div>
+
+            <div class="guide-item flex-row gap-05 align-center p-05" style="background: rgba(16, 185, 129, 0.08); border-radius: 8px; border: 1px solid rgba(16, 185, 129, 0.25);">
+              <span style="font-size: 1.4rem;">✅</span>
+              <div>
+                <strong style="color: #059669;">2. Open Palm Flat with Fingers Upward</strong>
+                <p class="mini" style="margin:0; color: var(--color-text-faded);">Extend fingers naturally pointing up towards the top of the frame. Avoid clenched fists.</p>
+              </div>
+            </div>
+
+            <div class="guide-item flex-row gap-05 align-center p-05" style="background: rgba(16, 185, 129, 0.08); border-radius: 8px; border: 1px solid rgba(16, 185, 129, 0.25);">
+              <span style="font-size: 1.4rem;">✅</span>
+              <div>
+                <strong style="color: #059669;">3. Good Even Lighting</strong>
+                <p class="mini" style="margin:0; color: var(--color-text-faded);">Use diffuse room light or daylight. Avoid intense glare or harsh deep shadows.</p>
+              </div>
+            </div>
+
+            <div class="guide-item flex-row gap-05 align-center p-05" style="background: rgba(225, 29, 72, 0.08); border-radius: 8px; border: 1px solid rgba(225, 29, 72, 0.25);">
+              <span style="font-size: 1.4rem;">⚠️</span>
+              <div>
+                <strong style="color: #e11d48;">4. If Image is Sideways?</strong>
+                <p class="mini" style="margin:0; color: var(--color-text-faded);">Simply click the <strong>"🔄 Rotate 90°"</strong> button below the canvas to orient it correctly.</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- MODAL: Chart Vault Manager -->
+      <div id="vault-modal" class="modal-overlay hidden">
+        <div class="modal-card card glass">
+          <div class="flex-row justify-between align-center mb-1">
+            <h3 class="card-title"><svg class="ico ico-accent"><use href="#i-sun"/></svg> Kundli Chart Vault</h3>
+            <button type="button" id="btn-close-vault" class="btn-cosmic btn-outline input-sm">✕ Close</button>
+          </div>
+          <p class="mini faded mb-1">Manage, load, backup, or print multiple saved astrological birth charts.</p>
+
+          <div class="flex-row justify-between align-center mb-1 flex-wrap gap-05">
+            <div class="flex-row gap-05">
+              <button type="button" id="btn-export-vault" class="btn-cosmic btn-outline input-sm">📥 Export JSON Backup</button>
+              <label for="vault-import-input" class="btn-cosmic btn-outline input-sm cursor-pointer">
+                <span>📤 Import JSON Backup</span>
+                <input type="file" id="vault-import-input" accept=".json" class="hidden">
+              </label>
+            </div>
+            <span id="vault-count-badge" class="badge">0 Saved Charts</span>
+          </div>
+
+          <div id="vault-charts-list" class="vault-list max-h-350 overflow-y-auto flex-col gap-05">
+            <!-- Saved chart cards injected here -->
+          </div>
+        </div>
+      </div>
 
     </main>
 

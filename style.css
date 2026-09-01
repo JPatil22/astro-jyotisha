@@ -687,23 +687,36 @@ label {
 }
 
 .input-cosmic {
-  background: rgba(5, 5, 15, 0.7);
-  border: 1px solid var(--border-glass);
-  padding: 0.8rem 1rem;
-  color: #fff;
+  background: #ffffff;
+  border: 1.5px solid rgba(18, 23, 42, 0.16);
+  padding: 0.75rem 1rem;
+  color: #141a2e;
   border-radius: 8px;
   font-family: inherit;
   font-size: 0.95rem;
   outline: none;
-  transition: all 0.3s ease;
+  transition: all 0.2s ease;
 }
 .input-cosmic:focus {
   border-color: var(--color-gold);
-  box-shadow: 0 0 10px rgba(255, 215, 0, 0.15);
+  box-shadow: 0 0 0 3px rgba(249, 115, 22, 0.15);
+}
+select.input-cosmic {
+  background-color: #ffffff;
+  color: #141a2e;
+  cursor: pointer;
 }
 select.input-cosmic option {
-  background: var(--bg-cosmic-black);
-  color: #fff;
+  background-color: #ffffff;
+  color: #141a2e;
+  padding: 0.6rem 0.8rem;
+  font-size: 0.92rem;
+}
+select.input-cosmic option:hover,
+select.input-cosmic option:checked,
+select.input-cosmic option:focus {
+  background-color: #fff5ec !important;
+  color: #ea580c !important;
 }
 
 /* Buttons */
@@ -1467,3 +1480,503 @@ h1, h2, h3, h4 { font-weight: 700; letter-spacing: -0.01em; color: var(--color-t
 .mobile-nav-toggle .ico { width: 1.4rem; height: 1.4rem; }
 .btn-cosmic .ico { width: 1.05em; height: 1.05em; vertical-align: -0.15em; margin-right: 0.3rem; }
 h4 .ico { margin-right: 0.3rem; vertical-align: -0.16em; }
+
+/* --------------------------------------------------------------------------
+   City Search Autocomplete Dropdown
+   -------------------------------------------------------------------------- */
+.autocomplete-dropdown {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  right: 0;
+  background: #ffffff;
+  border: 1px solid var(--border-glass);
+  border-radius: 8px;
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.15);
+  max-height: 220px;
+  overflow-y: auto;
+  z-index: 1000;
+  margin-top: 4px;
+}
+.autocomplete-item {
+  padding: 0.65rem 0.9rem;
+  font-size: 0.85rem;
+  cursor: pointer;
+  border-bottom: 1px solid rgba(18, 23, 42, 0.05);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  transition: background 0.15s ease;
+}
+.autocomplete-item:hover, .autocomplete-item.selected {
+  background: #fff5ec;
+  color: var(--color-gold);
+}
+.autocomplete-item .city-coords {
+  font-size: 0.72rem;
+  color: var(--color-text-faded);
+}
+
+/* --------------------------------------------------------------------------
+   Chart Controls & Input Sizing
+   -------------------------------------------------------------------------- */
+.input-sm {
+  padding: 0.35rem 0.65rem;
+  font-size: 0.8rem;
+  border-radius: 6px;
+}
+.chart-header-controls {
+  padding-bottom: 0.5rem;
+  border-bottom: 1px solid var(--border-glass);
+}
+
+/* --------------------------------------------------------------------------
+   Ashtakavarga (SAV & BAV) Grid
+   -------------------------------------------------------------------------- */
+.ashtakavarga-container {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(130px, 1fr));
+  gap: 0.5rem;
+}
+.sav-box {
+  padding: 0.6rem 0.75rem;
+  border-radius: 8px;
+  background: rgba(18, 23, 42, 0.03);
+  border: 1px solid var(--border-glass);
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+}
+.sav-box-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+.sav-house { font-size: 0.75rem; font-weight: 700; color: var(--color-gold); }
+.sav-bindus { font-size: 1.1rem; font-weight: 800; }
+.sav-rating {
+  font-size: 0.68rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+}
+.sav-box.strong { background: rgba(16, 122, 87, 0.08); border-color: rgba(16, 122, 87, 0.25); }
+.sav-box.strong .sav-bindus, .sav-box.strong .sav-rating { color: #0f766e; }
+.sav-box.weak { background: rgba(225, 29, 72, 0.07); border-color: rgba(225, 29, 72, 0.25); }
+.sav-box.weak .sav-bindus, .sav-box.weak .sav-rating { color: #e11d48; }
+
+/* --------------------------------------------------------------------------
+   Bhava Chalit Shifts
+   -------------------------------------------------------------------------- */
+.bhava-chalit-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+.bhava-shift-card {
+  padding: 0.65rem 0.85rem;
+  border-radius: 8px;
+  background: rgba(124, 77, 188, 0.06);
+  border: 1px solid rgba(124, 77, 188, 0.25);
+  font-size: 0.82rem;
+}
+.bhava-shift-card strong { color: var(--color-violet); }
+.bhava-cusps-summary {
+  font-size: 0.8rem;
+  color: var(--color-text-faded);
+  line-height: 1.5;
+  padding: 0.5rem;
+  background: rgba(18, 23, 42, 0.02);
+  border-radius: 8px;
+}
+
+/* --------------------------------------------------------------------------
+   Parashari Graha Drishti
+   -------------------------------------------------------------------------- */
+.drishti-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 0.75rem;
+}
+.drishti-card-item {
+  padding: 0.75rem 0.9rem;
+  border-radius: 10px;
+  background: rgba(18, 23, 42, 0.03);
+  border: 1px solid var(--border-glass);
+}
+.drishti-card-item strong { color: var(--color-gold); font-size: 0.9rem; }
+.drishti-aspect-tag {
+  display: inline-block;
+  font-size: 0.68rem;
+  font-weight: 600;
+  padding: 0.1rem 0.45rem;
+  border-radius: 999px;
+  background: rgba(91, 82, 224, 0.1);
+  color: var(--color-violet);
+  margin-right: 0.25rem;
+  margin-top: 0.2rem;
+}
+.mutual-aspect-strip {
+  grid-column: 1 / -1;
+  padding: 0.75rem 1rem;
+  border-radius: 10px;
+  background: #fff5ec;
+  border: 1px solid rgba(249, 115, 22, 0.3);
+  font-size: 0.85rem;
+}
+
+/* --------------------------------------------------------------------------
+   Deep Dasha (Levels 1 to 4) Interactive Styling
+   -------------------------------------------------------------------------- */
+.dasha-row.clickable {
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+.dasha-row.clickable:hover {
+  background: rgba(249, 115, 22, 0.08);
+  border-color: var(--color-gold);
+}
+.dasha-row.selected {
+  background: rgba(249, 115, 22, 0.15);
+  border-left: 3px solid var(--color-gold);
+}
+
+/* --------------------------------------------------------------------------
+   Hast Rekha (Palmistry Studio) Styles
+   -------------------------------------------------------------------------- */
+.preset-btn {
+  font-size: 0.8rem;
+  padding: 0.4rem 0.8rem;
+  border-radius: 999px;
+  transition: all 0.2s ease;
+}
+.preset-btn.active, .preset-btn:hover {
+  background: #fff5ec;
+  border-color: var(--color-gold);
+  color: var(--color-gold);
+  box-shadow: 0 2px 8px rgba(249, 115, 22, 0.15);
+}
+
+.diagnostic-scoreboard {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 0.75rem;
+  padding: 0.9rem;
+  border-radius: 12px;
+  background: rgba(18, 23, 42, 0.03);
+  border: 1px solid var(--border-glass);
+}
+@media (max-width: 600px) {
+  .diagnostic-scoreboard {
+    grid-template-columns: 1fr;
+  }
+}
+
+.diag-meter {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+.diag-lbl {
+  font-size: 0.72rem;
+  color: var(--color-text-faded);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+.diag-meter strong {
+  font-size: 1.05rem;
+  color: var(--color-gold);
+}
+
+.milestones-box {
+  padding: 0.8rem 1rem;
+  border-radius: 10px;
+  background: #fff5ec;
+  border: 1px solid rgba(249, 115, 22, 0.25);
+}
+.milestones-box strong {
+  color: var(--color-gold);
+}
+
+#palm-video-stream {
+  max-width: 100%;
+  border: 2px solid var(--color-gold);
+  box-shadow: 0 0 20px rgba(249, 115, 22, 0.25);
+}
+
+/* --------------------------------------------------------------------------
+   Modal Overlay & Chart Vault
+   -------------------------------------------------------------------------- */
+.modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(10, 12, 20, 0.75);
+  backdrop-filter: blur(8px);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 9999;
+  padding: 1rem;
+}
+.modal-overlay.hidden {
+  display: none;
+}
+.modal-card {
+  width: 100%;
+  max-width: 650px;
+  max-height: 90vh;
+  background: #ffffff;
+  border: 1px solid var(--border-glass);
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.25);
+  border-radius: 16px;
+  overflow: hidden;
+  padding: 1.5rem;
+}
+.vault-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+  margin-top: 0.5rem;
+}
+.vault-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0.75rem 1rem;
+  border-radius: 10px;
+  background: rgba(18, 23, 42, 0.03);
+  border: 1px solid var(--border-glass);
+  transition: all 0.2s ease;
+}
+.vault-item:hover {
+  background: #fff5ec;
+  border-color: var(--color-gold);
+}
+.vault-item-info strong {
+  font-size: 0.95rem;
+  color: var(--color-gold);
+}
+.vault-item-info span {
+  font-size: 0.78rem;
+  color: var(--color-text-faded);
+  display: block;
+}
+
+/* Choghadiya Badges */
+.choghadiya-item {
+  padding: 0.35rem 0.65rem;
+  border-radius: 6px;
+  font-size: 0.75rem;
+  border: 1px solid var(--border-glass);
+  background: rgba(18, 23, 42, 0.03);
+  display: flex;
+  flex-direction: column;
+  gap: 0.1rem;
+}
+.choghadiya-item.tone-good {
+  background: rgba(16, 122, 87, 0.08);
+  border-color: rgba(16, 122, 87, 0.3);
+  color: #0f766e;
+}
+.choghadiya-item.tone-bad {
+  background: rgba(225, 29, 72, 0.08);
+  border-color: rgba(225, 29, 72, 0.3);
+  color: #e11d48;
+}
+
+/* --------------------------------------------------------------------------
+   Hand Element Identification Matrix (4 Quadrants)
+   -------------------------------------------------------------------------- */
+.hand-element-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 0.75rem;
+}
+@media (max-width: 900px) {
+  .hand-element-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+@media (max-width: 500px) {
+  .hand-element-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+.element-choice-card {
+  padding: 0.85rem 1rem;
+  border-radius: 12px;
+  background: rgba(18, 23, 42, 0.03);
+  border: 1.5px solid var(--border-glass);
+  cursor: pointer;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+}
+.element-choice-card:hover {
+  background: #fff5ec;
+  border-color: var(--color-gold);
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(249, 115, 22, 0.12);
+}
+.element-choice-card.active {
+  background: #fff5ec;
+  border-color: var(--color-gold);
+  box-shadow: 0 4px 14px rgba(249, 115, 22, 0.2);
+}
+.elem-head {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  font-size: 0.95rem;
+  color: var(--color-gold);
+}
+.elem-icon {
+  font-size: 1.15rem;
+}
+.elem-formula {
+  font-size: 0.76rem;
+  font-weight: 700;
+  color: #0f766e;
+  background: rgba(15, 118, 110, 0.08);
+  padding: 0.2rem 0.4rem;
+  border-radius: 4px;
+  width: fit-content;
+}
+.elem-desc {
+  font-size: 0.78rem;
+  color: var(--color-text-faded);
+  margin: 0;
+  line-height: 1.35;
+}
+
+/* Palm Quality Alert Banner */
+.palm-alert-banner {
+  padding: 0.65rem 0.9rem;
+  border-radius: 10px;
+  margin-bottom: 0.75rem;
+  background: #fff1f2;
+  border: 1.5px solid #fecdd3;
+  color: #9f1239;
+  animation: fadeIn 0.25s ease-in-out;
+}
+.palm-alert-banner.alert-warning {
+  background: #fffbeb;
+  border-color: #fde68a;
+  color: #92400e;
+}
+.palm-alert-banner.alert-success {
+  background: #ecfdf5;
+  border-color: #a7f3d0;
+  color: #065f46;
+}
+.palm-alert-banner strong {
+  display: block;
+  font-size: 0.88rem;
+}
+.palm-alert-banner p {
+  color: inherit;
+  font-size: 0.76rem;
+  opacity: 0.9;
+}
+
+/* --------------------------------------------------------------------------
+   7 Planetary Mounts Interactive Grid & Details Card
+   -------------------------------------------------------------------------- */
+.mount-pills-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 0.5rem;
+  margin-bottom: 0.75rem;
+}
+@media (max-width: 900px) {
+  .mount-pills-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+@media (max-width: 480px) {
+  .mount-pills-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+.mount-pill-btn {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 0.15rem;
+  padding: 0.55rem 0.75rem;
+  border-radius: 8px;
+  background: rgba(18, 23, 42, 0.03);
+  border: 1px solid var(--border-glass);
+  cursor: pointer;
+  text-align: left;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+}
+.mount-pill-btn:hover {
+  background: #fff5ec;
+  border-color: var(--color-gold);
+  transform: translateY(-1px);
+}
+.mount-pill-btn.active {
+  background: #fff5ec;
+  border-color: var(--color-gold);
+  box-shadow: 0 2px 8px rgba(249, 115, 22, 0.2);
+}
+.mount-pill-head {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+  font-size: 0.85rem;
+  font-weight: 700;
+  color: var(--color-gold);
+}
+.mount-pill-loc {
+  font-size: 0.7rem;
+  color: var(--color-text-faded);
+  line-height: 1.2;
+}
+
+.mount-detail-card {
+  padding: 0.85rem 1rem;
+  border-radius: 10px;
+  background: #ffffff;
+  border: 1.5px solid rgba(249, 115, 22, 0.25);
+  box-shadow: 0 4px 14px rgba(18, 23, 42, 0.04);
+  animation: fadeIn 0.2s ease-in-out;
+}
+.mount-detail-title {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+  margin-bottom: 0.4rem;
+  padding-bottom: 0.35rem;
+  border-bottom: 1px solid rgba(18, 23, 42, 0.08);
+}
+.mount-detail-title h4 {
+  font-size: 0.95rem;
+  color: var(--color-gold);
+  margin: 0;
+}
+.mount-loc-badge {
+  font-size: 0.72rem;
+  padding: 0.15rem 0.45rem;
+  border-radius: 4px;
+  background: rgba(15, 118, 110, 0.08);
+  color: #0f766e;
+  font-weight: 600;
+}
+.mount-section-row {
+  margin-top: 0.4rem;
+  font-size: 0.78rem;
+  line-height: 1.4;
+}
+.mount-section-row strong {
+  color: var(--color-text-white);
+}
+

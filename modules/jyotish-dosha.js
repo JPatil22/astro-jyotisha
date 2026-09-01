@@ -17,11 +17,14 @@ const rashiOf = (lon) => Math.floor(normalizeDegrees(lon) / 30);
  * @param {number} saturnTransitSid - today's sidereal Saturn longitude (for Sade Sati)
  * @returns {Array} list of { name, present, severity, detail }
  */
-export function detectDoshas(positions, lagnaSid, saturnTransitSid) {
+export function detectDoshas(positions, lagnaSid, saturnTransitSid = positions?.Saturn ?? 0) {
+  if (typeof saturnTransitSid !== 'number' || isNaN(saturnTransitSid)) {
+    saturnTransitSid = positions?.Saturn ?? 0;
+  }
   const doshas = [];
   const r = {};
   ['Sun', 'Moon', 'Mars', 'Mercury', 'Jupiter', 'Venus', 'Saturn', 'Rahu', 'Ketu']
-    .forEach(g => { r[g] = rashiOf(positions[g]); });
+    .forEach(g => { r[g] = rashiOf(positions[g] ?? 0); });
   const moonR = r.Moon;
 
   // --- Manglik (Kuja) Dosha: Mars in 1/2/4/7/8/12 from Lagna ---

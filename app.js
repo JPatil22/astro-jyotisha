@@ -16,12 +16,21 @@ import {
 
 import { 
   DEFAULT_PALM_POINTS, 
+  HAND_PRESETS,
   HAND_SHAPES, 
   PALM_MOUNTS, 
+  LINE_METADATA,
   drawDefaultHandOutline, 
   analyzePalmLines,
   runSobelCreaseDetection,
-  snapPointToNearestEdge
+  snapPointToNearestEdge,
+  estimateLifeLineAge,
+  getFateLineMilestones,
+  classifyHandElementFromLandmarks,
+  projectPalmLinesFromLandmarks,
+  validatePalmImageAndPose,
+  rotateImage,
+  flipImage
 } from './modules/palmistry.js';
 
 import {
@@ -41,21 +50,40 @@ import {
   NAKSHATRAS,
   RASHIS,
   drawNorthIndianKundli,
+  drawSouthIndianKundli,
+  drawEastIndianKundli,
+  drawKundliByStyle,
+  VARGA_DEFINITIONS,
+  getVargaRashiIndex,
+  getVargaSyntheticLongitude,
+  calculateVargaChart,
   getHouseFromLagna,
   isManglikHouse,
   getNavamsaLongitude
 } from './modules/jyotish.js';
 
 import { calculateGunaMilan } from './modules/jyotish-milan.js';
-
-import { calculateVimshottariDasha } from './modules/jyotish-dasha.js';
-
+import { 
+  calculateVimshottariDasha,
+  computeAntardashas,
+  computePratyantardashas,
+  computeSookshmaDashas
+} from './modules/jyotish-dasha.js';
 import { calculatePanchang, getChandraGochar } from './modules/jyotish-panchang.js';
-
 import { detectDoshas } from './modules/jyotish-dosha.js';
-
 import { analyzeGraha } from './modules/jyotish-strength.js';
-
+import { calculateAshtakavarga } from './modules/jyotish-ashtakavarga.js';
+import { calculateBhavaChalit } from './modules/jyotish-bhavas.js';
+import { calculateGrahaDrishti } from './modules/jyotish-drishti.js';
+import { searchOfflineCities, searchCitiesLive } from './modules/geocoding.js';
+import { 
+  getSavedCharts, 
+  saveChartToVault, 
+  deleteChartFromVault, 
+  exportVaultJSON, 
+  importVaultJSON,
+  generatePrintableReportHTML
+} from './modules/vault.js';
 import { drawCards } from './modules/tarot.js';
 
 // ==========================================================================
@@ -66,14 +94,23 @@ const state = {
     name: '',
     dob: '',
     time: '12:00',
-    tz: '0',
-    lat: 51.5074,
-    lon: -0.1278
+    tz: '5.5',
+    lat: 28.6139,
+    lon: 77.2090
+  },
+  chartStyle: 'north',
+  activeVarga: 'D1',
+  calculatedChart: null, // Holds { positions, ascSidereal, jd, birthDate, moonSidereal, moonRashi, moonNak }
+  dashaState: {
+    dashaResult: null,
+    selectedMahaIndex: 0,
+    selectedAntarIndex: 0,
+    selectedPratyantarIndex: 0
   },
   palmPoints: JSON.parse(JSON.stringify(DEFAULT_PALM_POINTS)),
-  palmImage: null, // Image object for uploaded photo
-  edgeMap: null,   // Calculated Sobel binary edge map
-  draggedPoint: null, // { lineKey, index }
+  palmImage: null,
+  edgeMap: null,
+  draggedPoint: null,
   tarotDrawn: []
 };
 
@@ -370,16 +407,57 @@ function computeTodaySky() {
   return { now, jd, sunTrop, moonTrop, sunSid: toSidereal(sunTrop, jd), moonSid: toSidereal(moonTrop, jd) };
 }
 
-// Today's Panchang (computed for the current instant).
+// Today's Panchang & Muhurta (computed for the current instant).
+let activeChoghadiyaMode = 'day';
+let cachedPanchangData = null;
+
+function renderChoghadiyaList() {
+  if (!cachedPanchangData) return;
+  const container = document.getElementById('choghadiya-list');
+  if (!container) return;
+
+  container.innerHTML = '';
+  const list = activeChoghadiyaMode === 'day' 
+    ? cachedPanchangData.choghadiya.day 
+    : cachedPanchangData.choghadiya.night;
+
+  list.forEach(c => {
+    const el = document.createElement('div');
+    el.className = `choghadiya-item tone-${c.tone}`;
+    el.innerHTML = `
+      <strong>${c.name} (${c.quality})</strong>
+      <span class="mini faded">${c.startStr} - ${c.endStr}</span>
+    `;
+    container.appendChild(el);
+  });
+}
+
 function renderPanchang() {
   const sky = computeTodaySky();
-  const p = calculatePanchang(sky.now, sky.sunSid, sky.moonSid, sky.sunTrop, sky.moonTrop);
+  const lat = state.user.lat || 28.6139;
+  const lon = state.user.lon || 77.2090;
+  const tz = state.user.tz || 5.5;
+
+  const p = calculatePanchang(sky.now, sky.sunSid, sky.moonSid, sky.sunTrop, sky.moonTrop, lat, lon, tz);
+  cachedPanchangData = p;
+
   const set = (id, t) => { const e = document.getElementById(id); if (e) e.innerText = t; };
   set('panchang-vara', `${p.vara.name} · ${p.vara.english}`);
   set('panchang-tithi', p.tithi.label);
   set('panchang-nakshatra', `${p.nakshatra.name} · pada ${p.nakshatra.pada}`);
   set('panchang-yoga', p.yoga.name);
   set('panchang-karana', p.karana.name);
+
+  if (p.sunTimes) {
+    set('panchang-sun-times', `Sunrise: ${p.sunTimes.sunriseStr} | Sunset: ${p.sunTimes.sunsetStr}`);
+  }
+  if (p.muhurtas) {
+    set('panchang-abhijit', `${p.muhurtas.abhijit.startStr} - ${p.muhurtas.abhijit.endStr}`);
+    set('panchang-rahu', `${p.muhurtas.rahuKaal.startStr} - ${p.muhurtas.rahuKaal.endStr}`);
+    set('panchang-yama', `${p.muhurtas.yamaganda.startStr} - ${p.muhurtas.yamaganda.endStr}`);
+  }
+
+  renderChoghadiyaList();
 }
 
 // Chandra Gochar (today's Moon transit) from a natal Rashi, written into a set of
@@ -430,6 +508,23 @@ function renderDoshas(positions, lagnaSid) {
 function initDashboardExtras() {
   renderPanchang();
 
+  const dayBtn = document.getElementById('btn-choghadiya-day');
+  const nightBtn = document.getElementById('btn-choghadiya-night');
+  if (dayBtn && nightBtn) {
+    dayBtn.addEventListener('click', () => {
+      activeChoghadiyaMode = 'day';
+      dayBtn.classList.add('active');
+      nightBtn.classList.remove('active');
+      renderChoghadiyaList();
+    });
+    nightBtn.addEventListener('click', () => {
+      activeChoghadiyaMode = 'night';
+      nightBtn.classList.add('active');
+      dayBtn.classList.remove('active');
+      renderChoghadiyaList();
+    });
+  }
+
   const sel = document.getElementById('rashifal-select');
   if (sel) {
     RASHIS.forEach((r, i) => {
@@ -445,9 +540,345 @@ function initDashboardExtras() {
 }
 
 // ==========================================================================
-// KUNDLI (VEDIC ASTROLOGY)
+// KUNDLI (VEDIC ASTROLOGY) & SHODASHVARGA ENGINE
 // ==========================================================================
+
+// Redraws the primary canvas chart according to active Varga and selected style
+function redrawActiveVargaChart() {
+  if (!state.calculatedChart) return;
+  const { positions, ascSidereal } = state.calculatedChart;
+  const vargaCode = state.activeVarga || 'D1';
+  const style = state.chartStyle || 'north';
+
+  // Calculate Varga positions
+  const varga = calculateVargaChart(positions, ascSidereal, vargaCode);
+  const def = VARGA_DEFINITIONS.find(d => d.code === vargaCode) || { name: vargaCode, description: '' };
+
+  const titleEl = document.getElementById('active-varga-title');
+  const descEl = document.getElementById('active-varga-desc');
+  if (titleEl) titleEl.innerHTML = `<svg class="ico ico-accent"><use href="#i-sparkle"/></svg> ${def.name} (${vargaCode}) Chart`;
+  if (descEl) descEl.innerText = def.description;
+
+  drawKundliByStyle(style, dom.birthChartCanvas, varga.positions, varga.lagna, { title: `${vargaCode} ${def.name}` });
+
+  // Companion Navamsa (D9)
+  const navCanvas = document.getElementById('navamsa-canvas');
+  if (navCanvas) {
+    const navChart = calculateVargaChart(positions, ascSidereal, 'D9');
+    drawKundliByStyle(style, navCanvas, navChart.positions, navChart.lagna, { title: 'D9 Navamsa' });
+  }
+}
+
+// Renders Sarvashtakavarga (SAV) & Bhinnashtakavarga (BAV)
+function renderAshtakavarga(positions, lagnaSid) {
+  const av = calculateAshtakavarga(positions, lagnaSid);
+  const container = document.getElementById('sav-table-container');
+  if (!container) return;
+
+  container.innerHTML = '';
+  av.houseScores.forEach(hs => {
+    const box = document.createElement('div');
+    const isStrong = hs.bindus >= 28;
+    const isWeak = hs.bindus <= 23;
+    box.className = `sav-box ${isStrong ? 'strong' : isWeak ? 'weak' : ''}`;
+    box.innerHTML = `
+      <div class="sav-box-head">
+        <span class="sav-house">H${hs.house} (${hs.rashiName.substring(0, 3)})</span>
+        <span class="sav-bindus">${hs.bindus}</span>
+      </div>
+      <span class="sav-rating">${hs.evaluation}</span>
+    `;
+    container.appendChild(box);
+  });
+
+  const card = document.getElementById('ashtakavarga-card');
+  if (card) card.classList.remove('hidden');
+}
+
+// Renders Bhava Chalit Sripati cusps and house shifts
+function renderBhavaChalit(positions, lagnaSid) {
+  const chalit = calculateBhavaChalit(positions, lagnaSid);
+  const container = document.getElementById('bhava-chalit-container');
+  if (!container) return;
+
+  container.innerHTML = '';
+
+  if (chalit.shifts.length === 0) {
+    container.innerHTML = `
+      <div class="bhava-cusps-summary">
+        All grahas remain in their natal Rashi houses. No Bhava Chalit house shifts detected for this chart.
+      </div>
+    `;
+  } else {
+    chalit.shifts.forEach(sh => {
+      const el = document.createElement('div');
+      el.className = 'bhava-shift-card';
+      el.innerHTML = `
+        <strong>${sh.graha} Shift:</strong> ${sh.note}
+      `;
+      container.appendChild(el);
+    });
+  }
+}
+
+// Renders Parashari Graha Drishti (Aspects)
+function renderGrahaDrishti(positions, lagnaSid) {
+  const drishti = calculateGrahaDrishti(positions, lagnaSid);
+  const container = document.getElementById('drishti-content');
+  if (!container) return;
+
+  container.innerHTML = '';
+
+  // Mutual aspects banner
+  if (drishti.mutualAspects.length > 0) {
+    const mutBox = document.createElement('div');
+    mutBox.className = 'mutual-aspect-strip';
+    mutBox.innerHTML = `
+      <strong><svg class="ico ico-accent"><use href="#i-sparkle"/></svg> Mutual Aspects Detected:</strong>
+      <div class="mt-05">${drishti.mutualAspects.map(m => `<span>• ${m.detail}</span>`).join('<br>')}</div>
+    `;
+    container.appendChild(mutBox);
+  }
+
+  // Per-planet aspects
+  drishti.aspectList.forEach(item => {
+    const card = document.createElement('div');
+    card.className = 'drishti-card-item';
+    const hitGrahas = item.aspectedGrahas.length > 0
+      ? item.aspectedGrahas.map(g => `${g.graha} (in H${g.houseNumber})`).join(', ')
+      : 'None (empty houses)';
+
+    const aspectsTags = item.aspectOffsets.map(o => `<span class="drishti-aspect-tag">${o}th</span>`).join('');
+
+    card.innerHTML = `
+      <div class="flex-row justify-between align-center mb-05">
+        <strong>${item.graha} (H${item.occupiedHouse})</strong>
+        <div>${aspectsTags}</div>
+      </div>
+      <div class="faded mini"><strong>Aspects Houses:</strong> ${item.aspectedHouses.map(h => `H${h.houseNumber}`).join(', ')}</div>
+      <div class="faded mini mt-05"><strong>Aspects Grahas:</strong> ${hitGrahas}</div>
+    `;
+    container.appendChild(card);
+  });
+
+  const card = document.getElementById('drishti-card');
+  if (card) card.classList.remove('hidden');
+}
+
+// Interactive Deep Vimshottari Dasha Explorer (Levels 1 to 4)
+function renderDeepDasha(moonSidereal, birthDate) {
+  const dasha = calculateVimshottariDasha(moonSidereal, birthDate);
+  state.dashaState.dashaResult = dasha;
+
+  const fmt = (d) => d.toLocaleDateString(undefined, { year: 'numeric', month: 'short', day: 'numeric' });
+  const set = (id, text) => { const el = document.getElementById(id); if (el) el.innerText = text; };
+
+  set('dasha-current-maha', dasha.currentMaha.lord);
+  set('dasha-maha-range', `${fmt(dasha.currentMaha.start)} — ${fmt(dasha.currentMaha.end)}`);
+
+  if (dasha.currentAntar) {
+    set('dasha-current-antar', `${dasha.currentMaha.lord} → ${dasha.currentAntar.lord}`);
+    set('dasha-antar-range', `${fmt(dasha.currentAntar.start)} — ${fmt(dasha.currentAntar.end)}`);
+  }
+  if (dasha.currentPratyantar) {
+    set('dasha-current-pratyantar', `${dasha.currentAntar.lord} → ${dasha.currentPratyantar.lord}`);
+    set('dasha-pratyantar-range', `${fmt(dasha.currentPratyantar.start)} — ${fmt(dasha.currentPratyantar.end)}`);
+  }
+  if (dasha.currentSookshma) {
+    set('dasha-current-sookshma', `${dasha.currentPratyantar.lord} → ${dasha.currentSookshma.lord}`);
+    set('dasha-sookshma-range', `${fmt(dasha.currentSookshma.start)} — ${fmt(dasha.currentSookshma.end)}`);
+  }
+
+  // Level 1 (Maha) List
+  const mahaList = document.getElementById('dasha-maha-list');
+  mahaList.innerHTML = '';
+  dasha.mahadashas.forEach((m, mIdx) => {
+    const row = document.createElement('div');
+    row.className = 'dasha-row clickable' + (m === dasha.currentMaha ? ' active' : '');
+    row.innerHTML = `<span class="dasha-lord">${m.lord}</span><span class="dasha-dates">${fmt(m.start)} — ${fmt(m.end)}</span>`;
+    row.addEventListener('click', () => {
+      document.querySelectorAll('#dasha-maha-list .dasha-row').forEach(r => r.classList.remove('selected'));
+      row.classList.add('selected');
+      renderAntardashasForMaha(m);
+    });
+    mahaList.appendChild(row);
+  });
+
+  // Render active Antardashas initially
+  renderAntardashasForMaha(dasha.currentMaha);
+
+  document.getElementById('dasha-output').classList.remove('hidden');
+}
+
+function renderAntardashasForMaha(maha) {
+  const fmt = (d) => d.toLocaleDateString(undefined, { year: 'numeric', month: 'short', day: 'numeric' });
+  const allAntar = computeAntardashas(maha.lord, maha.virtualStart, maha.fullYears);
+  const antardashas = allAntar.filter(a => a.end > maha.start);
+
+  const titleEl = document.getElementById('antar-list-title');
+  if (titleEl) titleEl.innerText = `Antardashas of ${maha.lord} Mahadasha`;
+
+  const antarList = document.getElementById('dasha-antar-list');
+  antarList.innerHTML = '';
+  antardashas.forEach((a, aIdx) => {
+    const isRunning = state.dashaState.dashaResult.currentAntar && state.dashaState.dashaResult.currentAntar.lord === a.lord && maha === state.dashaState.dashaResult.currentMaha;
+    const row = document.createElement('div');
+    row.className = 'dasha-row clickable' + (isRunning ? ' active' : '');
+    row.innerHTML = `<span class="dasha-lord">${maha.lord} → ${a.lord}</span><span class="dasha-dates">${fmt(a.start)} — ${fmt(a.end)}</span>`;
+    row.addEventListener('click', () => {
+      document.querySelectorAll('#dasha-antar-list .dasha-row').forEach(r => r.classList.remove('selected'));
+      row.classList.add('selected');
+      renderPratyantardashasForAntar(maha, a);
+    });
+    antarList.appendChild(row);
+  });
+
+  if (antardashas.length > 0) {
+    const activeOrFirst = (maha === state.dashaState.dashaResult.currentMaha && state.dashaState.dashaResult.currentAntar)
+      ? state.dashaState.dashaResult.currentAntar
+      : antardashas[0];
+    renderPratyantardashasForAntar(maha, activeOrFirst);
+  }
+}
+
+function renderPratyantardashasForAntar(maha, antar) {
+  const fmt = (d) => d.toLocaleDateString(undefined, { year: 'numeric', month: 'short', day: 'numeric' });
+  const pratyantardashas = computePratyantardashas(maha.lord, antar.lord, antar.start, antar.years);
+
+  const titleEl = document.getElementById('pratyantar-list-title');
+  if (titleEl) titleEl.innerText = `Pratyantardashas of ${maha.lord} → ${antar.lord}`;
+
+  const pratyList = document.getElementById('dasha-pratyantar-list');
+  pratyList.innerHTML = '';
+  pratyantardashas.forEach((p) => {
+    const now = new Date();
+    const isRunning = now >= p.start && now < p.end;
+    const row = document.createElement('div');
+    row.className = 'dasha-row clickable' + (isRunning ? ' active' : '');
+    row.innerHTML = `<span class="dasha-lord">${p.pratyantarLord}</span><span class="dasha-dates">${fmt(p.start)} — ${fmt(p.end)} (${Math.round(p.days)}d)</span>`;
+    row.addEventListener('click', () => {
+      document.querySelectorAll('#dasha-pratyantar-list .dasha-row').forEach(r => r.classList.remove('selected'));
+      row.classList.add('selected');
+      renderSookshmaDashasForPratyantar(maha, antar, p);
+    });
+    pratyList.appendChild(row);
+  });
+
+  if (pratyantardashas.length > 0) {
+    const now = new Date();
+    const activeOrFirst = pratyantardashas.find(p => now >= p.start && now < p.end) || pratyantardashas[0];
+    renderSookshmaDashasForPratyantar(maha, antar, activeOrFirst);
+  }
+}
+
+function renderSookshmaDashasForPratyantar(maha, antar, pratyantar) {
+  const fmt = (d) => d.toLocaleDateString(undefined, { year: 'numeric', month: 'short', day: 'numeric' });
+  const sookshmas = computeSookshmaDashas(maha.lord, antar.lord, pratyantar.pratyantarLord, pratyantar.start, pratyantar.years);
+
+  const titleEl = document.getElementById('sookshma-list-title');
+  if (titleEl) titleEl.innerText = `Sookshma of ${maha.lord} → ${antar.lord} → ${pratyantar.pratyantarLord}`;
+
+  const sookshmaList = document.getElementById('dasha-sookshma-list');
+  sookshmaList.innerHTML = '';
+  sookshmas.forEach(sk => {
+    const now = new Date();
+    const isRunning = now >= sk.start && now < sk.end;
+    const row = document.createElement('div');
+    row.className = 'dasha-row' + (isRunning ? ' active' : '');
+    row.innerHTML = `<span class="dasha-lord">${sk.sookshmaLord}</span><span class="dasha-dates">${fmt(sk.start)} — ${fmt(sk.end)}</span>`;
+    sookshmaList.appendChild(row);
+  });
+}
+
+// --------------------------------------------------------------------------
+// City Search & Autocomplete Initialization
+// --------------------------------------------------------------------------
+function initCityAutocomplete() {
+  const searchInput = document.getElementById('astro-city-search');
+  const dropdown = document.getElementById('city-autocomplete-list');
+  if (!searchInput || !dropdown) return;
+
+  let debounceTimer = null;
+
+  const performSearch = async () => {
+    const val = searchInput.value.trim();
+    if (val.length < 2) {
+      dropdown.classList.add('hidden');
+      dropdown.innerHTML = '';
+      return;
+    }
+
+    const results = await searchCitiesLive(val);
+    if (!results || results.length === 0) {
+      dropdown.classList.add('hidden');
+      dropdown.innerHTML = '';
+      return;
+    }
+
+    dropdown.innerHTML = '';
+    results.forEach(city => {
+      const item = document.createElement('div');
+      item.className = 'autocomplete-item';
+      item.innerHTML = `
+        <strong>${city.name}</strong>
+        <span class="city-coords">(${city.lat.toFixed(2)}°, ${city.lon.toFixed(2)}° | UTC${city.tz >= 0 ? '+' : ''}${city.tz})</span>
+      `;
+      item.addEventListener('click', () => {
+        searchInput.value = city.name;
+        dom.astroLat.value = city.lat;
+        dom.astroLon.value = city.lon;
+        
+        // Select closest matching timezone
+        const select = dom.astroTz;
+        for (let i = 0; i < select.options.length; i++) {
+          if (parseFloat(select.options[i].value) === city.tz) {
+            select.selectedIndex = i;
+            break;
+          }
+        }
+
+        dropdown.classList.add('hidden');
+      });
+      dropdown.appendChild(item);
+    });
+
+    dropdown.classList.remove('hidden');
+  };
+
+  searchInput.addEventListener('input', () => {
+    clearTimeout(debounceTimer);
+    debounceTimer = setTimeout(performSearch, 250);
+  });
+
+  document.addEventListener('click', (e) => {
+    if (!searchInput.contains(e.target) && !dropdown.contains(e.target)) {
+      dropdown.classList.add('hidden');
+    }
+  });
+}
+
 function initAstrologySetup() {
+  // Initialize City Search Autocomplete
+  initCityAutocomplete();
+
+  // Chart Style Switcher (North, South, East Indian)
+  const styleSelect = document.getElementById('chart-style-select');
+  if (styleSelect) {
+    styleSelect.addEventListener('change', () => {
+      state.chartStyle = styleSelect.value;
+      redrawActiveVargaChart();
+    });
+  }
+
+  // Varga Switcher (D1 to D60)
+  const vargaSelect = document.getElementById('varga-select');
+  if (vargaSelect) {
+    vargaSelect.addEventListener('change', () => {
+      state.activeVarga = vargaSelect.value;
+      redrawActiveVargaChart();
+    });
+  }
+
   // Bind GPS geolocation lookup
   dom.btnDetectGeo.addEventListener('click', () => {
     if (!navigator.geolocation) {
@@ -462,20 +893,21 @@ function initAstrologySetup() {
         dom.astroLat.value = pos.coords.latitude.toFixed(4);
         dom.astroLon.value = pos.coords.longitude.toFixed(4);
         setLabel("Detected");
-        setTimeout(() => setLabel("GPS Detect"), 2000);
+        setTimeout(() => setLabel("GPS"), 2000);
       },
       (err) => {
         alert("GPS detection failed: " + err.message);
-        setLabel("GPS Detect");
+        setLabel("GPS");
       }
     );
   });
 
-  // Populate Guna Milan (Kundli matching) dropdowns: Nakshatra + Rashi for each partner.
+  // Populate Guna Milan dropdowns
   const milanNakSelects = ['milan-groom-nak', 'milan-bride-nak'];
   const milanRashiSelects = ['milan-groom-rashi', 'milan-bride-rashi'];
   milanNakSelects.forEach(id => {
     const sel = document.getElementById(id);
+    if (!sel) return;
     NAKSHATRAS.forEach((nak, i) => {
       const opt = document.createElement('option');
       opt.value = i;
@@ -485,6 +917,7 @@ function initAstrologySetup() {
   });
   milanRashiSelects.forEach(id => {
     const sel = document.getElementById(id);
+    if (!sel) return;
     RASHIS.forEach((rashi, i) => {
       const opt = document.createElement('option');
       opt.value = i;
@@ -508,11 +941,6 @@ function initAstrologySetup() {
     updateDashboardStatus();
 
     // 1. Julian Date conversion (UT corrected)
-    // The user enters a LOCAL birth time plus a timezone offset (hours east of UTC,
-    // e.g. tz = 5.5 means UTC+05:30). Universal Time = local time - offset. Because
-    // Julian Date is continuous, we take the JD at 00:00 UT of the birth date and add
-    // the (local hour - offset) as a fraction of a day; this handles day rollover on
-    // its own, so no Date parsing (which would silently use the browser's own zone).
     const [hour, minute] = time.split(':').map(Number);
     const [birthYear, birthMonth, birthDay] = dob.split('-').map(Number);
     const utDayFraction = ((hour + minute / 60) - tz) / 24;
@@ -521,14 +949,12 @@ function initAstrologySetup() {
     const T = (jd - 2451545.0) / 36525.0;
 
     // 2. Compute exact longitude coordinates for all planets
-    // VEDIC (sidereal) chart: 9 grahas incl. Rahu/Ketu, positions in the sidereal zodiac.
     const nodes = getLunarNodes(T);
     const ayanamsa = getAyanamsa(jd);
-    const positions = {}; // sidereal longitudes, keyed by graha
+    const positions = {}; // sidereal longitudes
 
     dom.astroPlacementsContainer.innerHTML = '';
 
-    // Compute the Lagna (Ascendant) first so we can show the Janma summary at the top.
     const ascendantLon = getPreciseAscendant(jd, lon, lat);
     const ascSidereal = toSidereal(ascendantLon, jd);
     const lagnaRashi = getRashi(ascSidereal);
@@ -536,7 +962,20 @@ function initAstrologySetup() {
     const moonRashi = getRashi(moonSidereal);
     const moonNak = getNakshatra(moonSidereal);
 
-    // Janma (birth) summary — the core Vedic identity.
+    const birthDate = new Date((jd - 2440587.5) * 86400000);
+
+    // Store in global state for live chart styling & varga switching
+    state.calculatedChart = {
+      positions,
+      ascSidereal,
+      jd,
+      birthDate,
+      moonSidereal,
+      moonRashi,
+      moonNak
+    };
+
+    // Janma (birth) summary
     const summary = document.createElement('div');
     summary.className = 'vedic-janma-summary';
     summary.innerHTML = `
@@ -574,7 +1013,6 @@ function initAstrologySetup() {
       const nak = getNakshatra(sidereal);
       const d = GRAHA_DEFAULTS[graha];
 
-      // Strength: dignity, retrograde, combustion
       const st = analyzeGraha(graha, sidereal, positions.Sun, T);
       const badges = [];
       if (st.dignity.status !== '—') {
@@ -600,38 +1038,41 @@ function initAstrologySetup() {
       dom.astroPlacementsContainer.appendChild(row);
     });
 
-    // Show output box
+    // Show output container
     dom.astroOutput.classList.remove('hidden');
 
-    // Draw the North-Indian square Kundli (D1 — positions are already sidereal)
-    drawNorthIndianKundli(dom.birthChartCanvas, positions, ascSidereal);
+    // 1. Draw Active Varga Chart in selected style
+    redrawActiveVargaChart();
 
-    // Draw the Navamsa (D9) chart from each graha's navamsa position
-    const navamsaPositions = {};
-    Object.keys(positions).forEach(g => { navamsaPositions[g] = getNavamsaLongitude(positions[g]); });
-    drawNorthIndianKundli(document.getElementById('navamsa-canvas'), navamsaPositions, getNavamsaLongitude(ascSidereal));
+    // 2. Ashtakavarga Matrix (SAV & BAV)
+    renderAshtakavarga(positions, ascSidereal);
 
-    // Dosha analysis (Manglik, Kaal Sarp, Sade Sati, Kemadruma, Guru Chandal, Grahan, Angarak)
+    // 3. Bhava Chalit Sripati Cusps & Shifts
+    renderBhavaChalit(positions, ascSidereal);
+
+    // 4. Parashari Graha Drishti (Aspects)
+    renderGrahaDrishti(positions, ascSidereal);
+
+    // 5. Dosha analysis
     renderDoshas(positions, ascSidereal);
 
-    // Chandra Gochar (today's Moon transit from this chart's Janma Rashi)
+    // 6. Chandra Gochar
     renderGochar(moonRashi.index, 'kundli-gochar');
 
-    // Prefill the Guna Milan "groom" fields from this chart's Moon (Janma Rashi/Nakshatra)
+    // 7. Prefill Guna Milan groom fields
     const groomNakSel = document.getElementById('milan-groom-nak');
     const groomRashiSel = document.getElementById('milan-groom-rashi');
     if (groomNakSel) groomNakSel.value = moonNak.index;
     if (groomRashiSel) groomRashiSel.value = moonRashi.index;
 
-    // Vimshottari Dasha — from the natal Moon and birth instant (derived from the Julian Date)
-    const birthDate = new Date((jd - 2440587.5) * 86400000);
-    renderDasha(moonSidereal, birthDate);
+    // 8. Deep Multi-Level Vimshottari Dasha (Levels 1 to 4)
+    renderDeepDasha(moonSidereal, birthDate);
   });
 
-  // Draw an empty labelled Kundli on boot
-  drawNorthIndianKundli(dom.birthChartCanvas, {}, 120);
+  // Initial boot chart
+  drawNorthIndianKundli(dom.birthChartCanvas, {}, 120, { title: 'Rashi (D1)' });
 
-  // Guna Milan (Kundli matching) handler
+  // Guna Milan matching handler
   const milanBtn = document.getElementById('calculate-milan-btn');
   if (milanBtn) {
     milanBtn.addEventListener('click', () => {
@@ -672,7 +1113,6 @@ function initAstrologySetup() {
         list.appendChild(row);
       });
 
-      // Veto checks & cancellations beyond the 36 gunas (Rajju, Vedha, cancellations)
       const alertsBox = document.getElementById('milan-alerts');
       alertsBox.innerHTML = '';
       result.alerts.forEach(al => {
@@ -685,81 +1125,511 @@ function initAstrologySetup() {
       document.getElementById('milan-output').classList.remove('hidden');
     });
   }
-}
 
-// Render the Vimshottari Dasha card: current Maha/Antar + timelines.
-function renderDasha(moonSiderealLongitude, birthDate) {
-  const dasha = calculateVimshottariDasha(moonSiderealLongitude, birthDate);
-  const fmt = (d) => d.toLocaleDateString(undefined, { year: 'numeric', month: 'short', day: 'numeric' });
-  const set = (id, text) => { const el = document.getElementById(id); if (el) el.innerText = text; };
+  // --------------------------------------------------------------------------
+  // Chart Vault & Horoscope PDF Exporter Integration
+  // --------------------------------------------------------------------------
+  const vaultModal = document.getElementById('vault-modal');
+  const btnOpenVault = document.getElementById('btn-open-vault');
+  const btnCloseVault = document.getElementById('btn-close-vault');
+  const btnSaveToVault = document.getElementById('btn-save-to-vault');
+  const btnExportVault = document.getElementById('btn-export-vault');
+  const vaultImportInput = document.getElementById('vault-import-input');
+  const vaultList = document.getElementById('vault-charts-list');
+  const vaultCountBadge = document.getElementById('vault-count-badge');
+  const btnPrintReport = document.getElementById('btn-print-report');
 
-  set('dasha-current-maha', dasha.currentMaha.lord);
-  set('dasha-maha-range', `${fmt(dasha.currentMaha.start)} — ${fmt(dasha.currentMaha.end)}`);
-  if (dasha.currentAntar) {
-    set('dasha-current-antar', `${dasha.currentMaha.lord} → ${dasha.currentAntar.lord}`);
-    set('dasha-antar-range', `${fmt(dasha.currentAntar.start)} — ${fmt(dasha.currentAntar.end)}`);
-  }
+  const renderVaultList = () => {
+    if (!vaultList) return;
+    const charts = getSavedCharts();
+    if (vaultCountBadge) vaultCountBadge.innerText = `${charts.length} Saved Charts`;
+    vaultList.innerHTML = '';
 
-  const mahaList = document.getElementById('dasha-maha-list');
-  mahaList.innerHTML = '';
-  dasha.mahadashas.forEach(m => {
-    const row = document.createElement('div');
-    row.className = 'dasha-row' + (m === dasha.currentMaha ? ' active' : '');
-    row.innerHTML = `<span class="dasha-lord">${m.lord}</span><span class="dasha-dates">${fmt(m.start)} — ${fmt(m.end)}</span>`;
-    mahaList.appendChild(row);
-  });
-
-  const antarList = document.getElementById('dasha-antar-list');
-  antarList.innerHTML = '';
-  dasha.antardashas.forEach(a => {
-    const row = document.createElement('div');
-    row.className = 'dasha-row' + (a === dasha.currentAntar ? ' active' : '');
-    row.innerHTML = `<span class="dasha-lord">${dasha.currentMaha.lord} → ${a.lord}</span><span class="dasha-dates">${fmt(a.start)} — ${fmt(a.end)}</span>`;
-    antarList.appendChild(row);
-  });
-
-  document.getElementById('dasha-output').classList.remove('hidden');
-}
-
-// ==========================================================================
-// PALMISTRY & CREASE SCANNER STUDIO
-// ==========================================================================
-function initPalmistrySetup() {
-  Object.keys(PALM_MOUNTS).forEach(key => {
-    const opt = document.createElement('option');
-    opt.value = key;
-    opt.innerText = PALM_MOUNTS[key].name;
-    dom.mountSelect.appendChild(opt);
-  });
-
-  dom.mountSelect.addEventListener('change', () => {
-    const val = dom.mountSelect.value;
-    if (!val) {
-      dom.mountInfo.classList.add('hidden');
+    if (charts.length === 0) {
+      vaultList.innerHTML = '<p class="mini faded text-center p-1">No saved charts in vault. Click "Save to Vault" to add one.</p>';
       return;
     }
-    dom.mountTitle.innerText = PALM_MOUNTS[val].name;
-    dom.mountTraits.innerText = `This area governs ${PALM_MOUNTS[val].key}. A prominent, fleshy mount here suggests strong abundance of these traits. A flat or hollow mount suggests areas where you must actively direct focus.`;
-    dom.mountInfo.classList.remove('hidden');
+
+    charts.forEach(c => {
+      const item = document.createElement('div');
+      item.className = 'vault-item';
+      item.innerHTML = `
+        <div class="vault-item-info">
+          <strong>${c.name}</strong>
+          <span>DOB: ${c.dob} ${c.time} | (${c.lat}°, ${c.lon}°) | UTC+${c.tz}</span>
+        </div>
+        <div class="flex-row gap-05">
+          <button type="button" class="btn-cosmic btn-gold input-sm btn-load-chart">Load</button>
+          <button type="button" class="btn-cosmic btn-outline input-sm btn-del-chart" style="color:#e11d48;">✕</button>
+        </div>
+      `;
+
+      item.querySelector('.btn-load-chart').addEventListener('click', () => {
+        dom.astroName.value = c.name;
+        dom.astroDob.value = c.dob;
+        dom.astroTime.value = c.time;
+        dom.astroLat.value = c.lat;
+        dom.astroLon.value = c.lon;
+        dom.astroTz.value = c.tz;
+        if (vaultModal) vaultModal.classList.add('hidden');
+        dom.astroForm.dispatchEvent(new Event('submit'));
+      });
+
+      item.querySelector('.btn-del-chart').addEventListener('click', () => {
+        deleteChartFromVault(c.id);
+        renderVaultList();
+      });
+
+      vaultList.appendChild(item);
+    });
+  };
+
+  if (btnOpenVault && vaultModal) {
+    btnOpenVault.addEventListener('click', () => {
+      renderVaultList();
+      vaultModal.classList.remove('hidden');
+    });
+  }
+
+  if (btnCloseVault && vaultModal) {
+    btnCloseVault.addEventListener('click', () => {
+      vaultModal.classList.add('hidden');
+    });
+  }
+
+  if (btnSaveToVault) {
+    btnSaveToVault.addEventListener('click', () => {
+      const name = dom.astroName.value.trim();
+      const dob = dom.astroDob.value;
+      if (!name || !dob) {
+        alert('Please enter a Name and Date of Birth first.');
+        return;
+      }
+      saveChartToVault({
+        name,
+        dob,
+        time: dom.astroTime.value,
+        tz: dom.astroTz.value,
+        lat: dom.astroLat.value,
+        lon: dom.astroLon.value
+      });
+      alert(`Chart for "${name}" successfully saved to Vault!`);
+      renderVaultList();
+    });
+  }
+
+  if (btnExportVault) {
+    btnExportVault.addEventListener('click', () => {
+      const json = exportVaultJSON();
+      const blob = new Blob([json], { type: 'application/json' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `jyotisha_chart_vault_${new Date().toISOString().slice(0, 10)}.json`;
+      a.click();
+      URL.revokeObjectURL(url);
+    });
+  }
+
+  if (vaultImportInput) {
+    vaultImportInput.addEventListener('change', (e) => {
+      const file = e.target.files[0];
+      if (!file) return;
+      const reader = new FileReader();
+      reader.onload = (evt) => {
+        try {
+          const res = importVaultJSON(evt.target.result);
+          alert(`Successfully imported ${res.count} charts into Vault!`);
+          renderVaultList();
+        } catch (err) {
+          alert('Import failed: ' + err.message);
+        }
+      };
+      reader.readAsText(file);
+    });
+  }
+
+  if (btnPrintReport) {
+    btnPrintReport.addEventListener('click', () => {
+      if (!state.calculatedChart) {
+        alert('Please calculate a chart first before printing.');
+        return;
+      }
+      const { positions, ascSidereal, moonSidereal, moonRashi, moonNak } = state.calculatedChart;
+      const ayanamsa = getAyanamsa(state.calculatedChart.jd);
+      const lagnaRashi = getRashi(ascSidereal);
+      const dasha = state.dashaState?.dashaResult || calculateVimshottariDasha(moonSidereal, state.calculatedChart.birthDate);
+
+      const html = generatePrintableReportHTML({
+        user: state.user,
+        lagnaRashi,
+        moonRashi,
+        moonNak,
+        ayanamsa,
+        positions,
+        dasha
+      });
+
+      const win = window.open('', '_blank');
+      if (win) {
+        win.document.write(html);
+        win.document.close();
+      }
+    });
+  }
+}
+
+
+// ==========================================================================
+// PALMISTRY & CREASE SCANNER STUDIO (9-LINE & DIAGNOSTIC ENGINE)
+// ==========================================================================
+let palmVideoStream = null;
+let activeLineFilter = 'all';
+
+function initPalmistrySetup() {
+  const updateMountDetails = (mountKey) => {
+    const mountData = PALM_MOUNTS[mountKey];
+    if (!mountData) return;
+
+    const tEl = document.getElementById('mount-title');
+    const locEl = document.getElementById('mount-loc-badge');
+    const keyEl = document.getElementById('mount-key-themes');
+    const elevEl = document.getElementById('mount-elevated');
+    const flatEl = document.getElementById('mount-flat');
+    const grahaEl = document.getElementById('mount-graha');
+
+    if (tEl) tEl.innerText = `${mountData.symbol} ${mountData.name}`;
+    if (locEl) locEl.innerText = mountData.location;
+    if (keyEl) keyEl.innerText = mountData.key;
+    if (elevEl) elevEl.innerText = mountData.elevated;
+    if (flatEl) flatEl.innerText = mountData.flat;
+    if (grahaEl) grahaEl.innerText = mountData.graha;
+  };
+
+  const mountBtns = document.querySelectorAll('.mount-pill-btn');
+  mountBtns.forEach(btn => {
+    btn.addEventListener('click', () => {
+      mountBtns.forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      const mKey = btn.getAttribute('data-mount');
+      updateMountDetails(mKey);
+    });
   });
+
+  // Initialize Jupiter mount details
+  updateMountDetails('Jupiter');
 
   const updateHandShapeTraits = () => {
     const shape = dom.handShapeSelect.value;
-    dom.handShapeTitle.innerText = HAND_SHAPES[shape].title;
-    dom.handShapeTraits.innerHTML = `<strong>Appearance:</strong> ${HAND_SHAPES[shape].physical}<br><br><strong>Character:</strong> ${HAND_SHAPES[shape].traits}`;
+    if (HAND_SHAPES[shape]) {
+      dom.handShapeTitle.innerText = HAND_SHAPES[shape].title;
+      dom.handShapeTraits.innerHTML = `<strong>Physical:</strong> ${HAND_SHAPES[shape].physical}<br><br><strong>Archetype:</strong> ${HAND_SHAPES[shape].traits}`;
+    }
   };
   dom.handShapeSelect.addEventListener('change', updateHandShapeTraits);
   updateHandShapeTraits();
 
+  // Hand Archetype Presets & Element Choice Cards (Earth, Water, Fire, Air)
+  const elementCards = document.querySelectorAll('.element-choice-card');
+  elementCards.forEach(card => {
+    card.addEventListener('click', () => {
+      elementCards.forEach(c => c.classList.remove('active'));
+      card.classList.add('active');
+
+      const pKey = card.getAttribute('data-preset');
+      if (HAND_PRESETS[pKey]) {
+        state.palmPoints = JSON.parse(JSON.stringify(HAND_PRESETS[pKey].points));
+        dom.handShapeSelect.value = pKey;
+        updateHandShapeTraits();
+        redrawPalmCanvas();
+        if (!dom.palmReadingResults.classList.contains('hidden')) {
+          runPalmAnalysis();
+        }
+      }
+    });
+  });
+
+  // Line Category Filter
+  const lineFilterSelect = document.getElementById('palm-line-filter');
+  if (lineFilterSelect) {
+    lineFilterSelect.addEventListener('change', () => {
+      activeLineFilter = lineFilterSelect.value;
+      redrawPalmCanvas();
+    });
+  }
+
+  // --------------------------------------------------------------------------
+  // Google MediaPipe Hands AI (Client-Side WASM/WebGL Landmark Tracker)
+  // --------------------------------------------------------------------------
+  let mpHandsInstance = null;
+  let isMediaPipeReady = false;
+  let pendingAutoFixDegrees = 0;
+
+  const updatePalmAlertBanner = (validation) => {
+    const banner = document.getElementById('palm-quality-alert');
+    const titleEl = document.getElementById('palm-alert-title');
+    const msgEl = document.getElementById('palm-alert-msg');
+    const iconEl = document.getElementById('palm-alert-icon');
+    const fixBtn = document.getElementById('btn-auto-fix-pose');
+
+    if (!banner || !validation) return;
+
+    if (validation.isValid) {
+      banner.classList.remove('hidden', 'alert-warning');
+      banner.classList.add('alert-success');
+      if (iconEl) iconEl.innerText = '✅';
+      if (titleEl) titleEl.innerText = validation.title;
+      if (msgEl) msgEl.innerText = validation.message;
+      if (fixBtn) fixBtn.classList.add('hidden');
+      setTimeout(() => { banner.classList.add('hidden'); }, 3500);
+    } else {
+      banner.classList.remove('hidden', 'alert-success');
+      banner.classList.add('alert-warning');
+      if (iconEl) iconEl.innerText = '⚠️';
+      if (titleEl) titleEl.innerText = validation.title;
+      if (msgEl) msgEl.innerText = validation.message;
+      
+      if (validation.canAutoRotate && fixBtn) {
+        pendingAutoFixDegrees = validation.suggestedRotation || 90;
+        fixBtn.innerText = `Auto-Rotate ${pendingAutoFixDegrees}°`;
+        fixBtn.classList.remove('hidden');
+      } else if (fixBtn) {
+        fixBtn.classList.add('hidden');
+      }
+    }
+  };
+
+  const initMediaPipeHands = () => {
+    if (mpHandsInstance) return mpHandsInstance;
+    if (typeof window.Hands !== 'undefined') {
+      try {
+        mpHandsInstance = new window.Hands({
+          locateFile: (file) => `https://cdn.jsdelivr.net/npm/@mediapipe/hands/${file}`
+        });
+        mpHandsInstance.setOptions({
+          maxNumHands: 1,
+          modelComplexity: 1,
+          minDetectionConfidence: 0.5,
+          minTrackingConfidence: 0.5
+        });
+        mpHandsInstance.onResults((results) => {
+          if (results.multiHandLandmarks && results.multiHandLandmarks.length > 0) {
+            const lms = results.multiHandLandmarks[0];
+            state.detectedLandmarks = lms;
+
+            // Validate Pose & Orientation
+            const validation = validatePalmImageAndPose(lms);
+            updatePalmAlertBanner(validation);
+
+            // 1. Auto-classify Hand Element (Earth, Air, Fire, Water)
+            const element = classifyHandElementFromLandmarks(lms);
+            dom.handShapeSelect.value = element;
+            updateHandShapeTraits();
+
+            // Highlight corresponding choice card
+            elementCards.forEach(c => {
+              c.classList.toggle('active', c.getAttribute('data-preset') === element);
+            });
+
+            // Show telemetry badge with biometric ratios
+            const telemetryBadge = document.getElementById('palm-ai-telemetry');
+            if (telemetryBadge) {
+              telemetryBadge.innerText = `AI Auto-Detected: ${element} Hand (${HAND_SHAPES[element]?.title})`;
+              telemetryBadge.classList.remove('hidden');
+            }
+
+            // 2. Project 9 palmistry lines directly from 21 landmarks
+            const projected = projectPalmLinesFromLandmarks(lms, dom.palmCanvas.width, dom.palmCanvas.height);
+            if (projected) {
+              // 3. Fine-snap to local skin creases if edge map exists
+              if (state.edgeMap) {
+                for (const [lineKey, linePoints] of Object.entries(projected)) {
+                  for (let i = 0; i < linePoints.length; i++) {
+                    const snapped = snapPointToNearestEdge(linePoints[i].x, linePoints[i].y, state.edgeMap);
+                    linePoints[i].x = snapped.x;
+                    linePoints[i].y = snapped.y;
+                  }
+                }
+              }
+              state.palmPoints = projected;
+            }
+
+            redrawPalmCanvas();
+            if (!dom.palmReadingResults.classList.contains('hidden')) {
+              runPalmAnalysis();
+            }
+          } else {
+            updatePalmAlertBanner({
+              isValid: false,
+              title: 'No Hand Detected',
+              message: 'No open human palm was recognized. Please check lighting or try snapping another photo.',
+              canAutoRotate: false
+            });
+          }
+        });
+        isMediaPipeReady = true;
+      } catch (err) {
+        console.warn('MediaPipe Hands initialization fallback:', err);
+      }
+    }
+    return mpHandsInstance;
+  };
+
+  // Run MediaPipe AI on demand
+  const triggerMediaPipeDetection = async (sourceElement) => {
+    const hands = initMediaPipeHands();
+    if (!hands || !sourceElement) return;
+
+    try {
+      const loader = document.getElementById('canvas-loading');
+      if (loader) { loader.innerText = 'AI detecting 21 3D hand landmarks…'; loader.classList.remove('hidden'); }
+      await hands.send({ image: sourceElement });
+      if (loader) loader.classList.add('hidden');
+    } catch (err) {
+      console.warn('AI detection processing:', err);
+      const loader = document.getElementById('canvas-loading');
+      if (loader) loader.classList.add('hidden');
+    }
+  };
+
+  // Image Transformation Tools: Rotate & Flip
+  const rotatePalmImage = async (deg = 90) => {
+    if (!state.palmImage) return;
+    const rotated = rotateImage(state.palmImage, deg);
+    rotated.onload = async () => {
+      state.palmImage = rotated;
+      state.edgeMap = runSobelCreaseDetection(rotated, dom.palmCanvas.width, dom.palmCanvas.height);
+      redrawPalmCanvas();
+      await triggerMediaPipeDetection(rotated);
+    };
+  };
+
+  const flipPalmImage = async () => {
+    if (!state.palmImage) return;
+    const flipped = flipImage(state.palmImage);
+    flipped.onload = async () => {
+      state.palmImage = flipped;
+      state.edgeMap = runSobelCreaseDetection(flipped, dom.palmCanvas.width, dom.palmCanvas.height);
+      redrawPalmCanvas();
+      await triggerMediaPipeDetection(flipped);
+    };
+  };
+
+  const btnRotate = document.getElementById('btn-rotate-palm');
+  if (btnRotate) btnRotate.addEventListener('click', () => rotatePalmImage(90));
+
+  const btnFlip = document.getElementById('btn-flip-palm');
+  if (btnFlip) btnFlip.addEventListener('click', flipPalmImage);
+
+  const btnAutoFix = document.getElementById('btn-auto-fix-pose');
+  if (btnAutoFix) btnAutoFix.addEventListener('click', () => rotatePalmImage(pendingAutoFixDegrees));
+
+  // Photo Guide Modal
+  const guideModal = document.getElementById('palm-guide-modal');
+  const btnOpenGuide = document.getElementById('btn-open-palm-guide');
+  const btnCloseGuide = document.getElementById('btn-close-palm-guide');
+  if (btnOpenGuide && guideModal) {
+    btnOpenGuide.addEventListener('click', () => guideModal.classList.remove('hidden'));
+  }
+  if (btnCloseGuide && guideModal) {
+    btnCloseGuide.addEventListener('click', () => guideModal.classList.add('hidden'));
+  }
+
+  // AI Auto-Detect Button
+  const btnAiDetect = document.getElementById('btn-palm-ai-detect');
+  if (btnAiDetect) {
+    btnAiDetect.addEventListener('click', async () => {
+      if (state.palmImage) {
+        await triggerMediaPipeDetection(state.palmImage);
+      } else {
+        alert('Please upload a palm photo or snap a camera snapshot first.');
+      }
+    });
+  }
+
+  // Camera Snapshot Engine
+  const cameraBtn = document.getElementById('btn-palm-camera');
+  const snapFrameBtn = document.getElementById('btn-snap-camera-frame');
+  const videoEl = document.getElementById('palm-video-stream');
+  const camText = document.getElementById('camera-btn-text');
+
+  if (cameraBtn && videoEl && snapFrameBtn) {
+    cameraBtn.addEventListener('click', async () => {
+      if (palmVideoStream) {
+        // Stop stream
+        palmVideoStream.getTracks().forEach(track => track.stop());
+        palmVideoStream = null;
+        videoEl.classList.add('hidden');
+        snapFrameBtn.classList.add('hidden');
+        dom.palmCanvas.classList.remove('hidden');
+        if (camText) camText.innerText = 'Camera Snapshot';
+        return;
+      }
+
+      try {
+        palmVideoStream = await navigator.mediaDevices.getUserMedia({
+          video: { facingMode: 'environment', width: { ideal: 640 }, height: { ideal: 800 } }
+        });
+        videoEl.srcObject = palmVideoStream;
+        videoEl.classList.remove('hidden');
+        snapFrameBtn.classList.remove('hidden');
+        dom.palmCanvas.classList.add('hidden');
+        if (camText) camText.innerText = 'Close Camera';
+      } catch (err) {
+        alert('Could not access camera: ' + err.message);
+      }
+    });
+
+    snapFrameBtn.addEventListener('click', () => {
+      if (!palmVideoStream) return;
+
+      const tempCanvas = document.createElement('canvas');
+      tempCanvas.width = dom.palmCanvas.width;
+      tempCanvas.height = dom.palmCanvas.height;
+      const tCtx = tempCanvas.getContext('2d');
+      tCtx.drawImage(videoEl, 0, 0, tempCanvas.width, tempCanvas.height);
+
+      const img = new Image();
+      img.onload = async () => {
+        state.palmImage = img;
+        state.edgeMap = runSobelCreaseDetection(img, dom.palmCanvas.width, dom.palmCanvas.height);
+
+        // Turn off camera
+        palmVideoStream.getTracks().forEach(track => track.stop());
+        palmVideoStream = null;
+        videoEl.classList.add('hidden');
+        snapFrameBtn.classList.add('hidden');
+        dom.palmCanvas.classList.remove('hidden');
+        if (camText) camText.innerText = 'Camera Snapshot';
+
+        dom.snapPalmPoints.classList.remove('hidden');
+        dom.overlayToggleContainer.classList.remove('hidden');
+        dom.toggleCreaseOverlay.checked = true;
+
+        redrawPalmCanvas();
+        // Auto-reveal report results
+        dom.palmReadingPlaceholder.classList.add('hidden');
+        dom.palmReadingResults.classList.remove('hidden');
+
+        // Trigger automated AI landmark detection
+        await triggerMediaPipeDetection(img);
+        runPalmAnalysis();
+      };
+      img.src = tempCanvas.toDataURL('image/png');
+    });
+  }
+
+  // Reset Points
   dom.resetPalmPoints.addEventListener('click', () => {
     state.palmPoints = JSON.parse(JSON.stringify(DEFAULT_PALM_POINTS));
+    state.detectedLandmarks = null;
     redrawPalmCanvas();
     if (!dom.palmReadingResults.classList.contains('hidden')) {
       runPalmAnalysis();
     }
   });
 
-  // Snap Points to Creases button
+  // Snap Points to Creases
   dom.snapPalmPoints.addEventListener('click', () => {
     if (!state.edgeMap) return;
     
@@ -777,8 +1647,14 @@ function initPalmistrySetup() {
     }
   });
 
-  // Toggle Crease view checkbox
+  // Visualization Overlays
   dom.toggleCreaseOverlay.addEventListener('change', redrawPalmCanvas);
+  const heatToggle = document.getElementById('toggle-heatmap-overlay');
+  if (heatToggle) heatToggle.addEventListener('change', redrawPalmCanvas);
+  const ageToggle = document.getElementById('toggle-age-milestones');
+  if (ageToggle) ageToggle.addEventListener('change', redrawPalmCanvas);
+  const lmsToggle = document.getElementById('toggle-landmarks-overlay');
+  if (lmsToggle) lmsToggle.addEventListener('change', redrawPalmCanvas);
 
   dom.btnGeneratePalm.addEventListener('click', () => {
     dom.palmReadingPlaceholder.classList.add('hidden');
@@ -791,7 +1667,7 @@ function initPalmistrySetup() {
     dom.palmReadingResults.classList.add('hidden');
   });
 
-  // Photo Uploader
+  // Photo File Uploader
   dom.palmUpload.addEventListener('change', (e) => {
     const file = e.target.files[0];
     if (!file) return;
@@ -799,18 +1675,22 @@ function initPalmistrySetup() {
     const reader = new FileReader();
     reader.onload = (event) => {
       const img = new Image();
-      img.onload = () => {
+      img.onload = async () => {
         state.palmImage = img;
-        
-        // Run Sobel edge detector on load
         state.edgeMap = runSobelCreaseDetection(img, dom.palmCanvas.width, dom.palmCanvas.height);
         
-        // Show scanning overlays and toggle options
         dom.snapPalmPoints.classList.remove('hidden');
         dom.overlayToggleContainer.classList.remove('hidden');
-        dom.toggleCreaseOverlay.checked = true; // default to show edges initially
+        dom.toggleCreaseOverlay.checked = true;
         
         redrawPalmCanvas();
+        // Auto-reveal report results
+        dom.palmReadingPlaceholder.classList.add('hidden');
+        dom.palmReadingResults.classList.remove('hidden');
+
+        // Trigger automated AI landmark detection and instant full report
+        await triggerMediaPipeDetection(img);
+        runPalmAnalysis();
       };
       img.src = event.target.result;
     };
@@ -834,9 +1714,12 @@ function initPalmistrySetup() {
   const handleStart = (e) => {
     e.preventDefault();
     const pos = getMousePos(e);
-    const dragThreshold = 12;
+    const dragThreshold = 14;
     
     for (const [lineKey, linePoints] of Object.entries(state.palmPoints)) {
+      if (activeLineFilter === 'major' && LINE_METADATA[lineKey]?.type !== 'major') continue;
+      if (activeLineFilter === 'minor' && LINE_METADATA[lineKey]?.type !== 'minor') continue;
+
       for (let i = 0; i < linePoints.length; i++) {
         const p = linePoints[i];
         const dist = Math.sqrt(Math.pow(pos.x - p.x, 2) + Math.pow(pos.y - p.y, 2));
@@ -875,6 +1758,9 @@ function initPalmistrySetup() {
   canvas.addEventListener('touchstart', handleStart);
   canvas.addEventListener('touchmove', handleMove);
   canvas.addEventListener('touchend', handleEnd);
+
+  // Initial draw
+  redrawPalmCanvas();
 }
 
 function redrawPalmCanvas() {
@@ -895,10 +1781,33 @@ function redrawPalmCanvas() {
     
     ctx.drawImage(img, x, y, img.width * scale, img.height * scale);
     
-    ctx.fillStyle = 'rgba(3, 3, 11, 0.4)';
+    ctx.fillStyle = 'rgba(3, 3, 11, 0.45)';
     ctx.fillRect(0, 0, w, h);
 
-    // 2. Draw Sobel edge detection overlay if checked
+    // Heatmap Overlay
+    const heatToggle = document.getElementById('toggle-heatmap-overlay');
+    if (state.edgeMap && heatToggle && heatToggle.checked) {
+      const heatImg = ctx.createImageData(w, h);
+      const heatmap = state.edgeMap.heatmap;
+      const maxM = state.edgeMap.maxMag || 1;
+      for (let i = 0; i < heatmap.length; i++) {
+        const val = heatmap[i] / maxM;
+        if (val > 0.1) {
+          const idx = i * 4;
+          heatImg.data[idx] = Math.floor(val * 255);       // Red
+          heatImg.data[idx + 1] = Math.floor((1 - val) * 200); // Green
+          heatImg.data[idx + 2] = 200;                    // Blue
+          heatImg.data[idx + 3] = Math.floor(val * 190);  // Alpha
+        }
+      }
+      const tCanvas = document.createElement('canvas');
+      tCanvas.width = w;
+      tCanvas.height = h;
+      tCanvas.getContext('2d').putImageData(heatImg, 0, 0);
+      ctx.drawImage(tCanvas, 0, 0);
+    }
+
+    // Sobel binary crease overlay
     if (state.edgeMap && dom.toggleCreaseOverlay.checked) {
       const edgeImgData = ctx.createImageData(w, h);
       const edges = state.edgeMap.edges;
@@ -926,10 +1835,42 @@ function redrawPalmCanvas() {
     drawDefaultHandOutline(ctx, w, h);
   }
 
-  // 3. Draw connecting lines
-  const drawLineCurve = (pts, strokeColor, shadowColor) => {
+  // 2. Draw MediaPipe 21 Landmark Skeleton Overlay (if enabled & detected)
+  const lmsToggle = document.getElementById('toggle-landmarks-overlay');
+  if (lmsToggle && lmsToggle.checked && state.detectedLandmarks) {
+    const lms = state.detectedLandmarks;
+    const HAND_CONNECTIONS = [
+      [0,1],[1,2],[2,3],[3,4],
+      [0,5],[5,6],[6,7],[7,8],
+      [5,9],[9,10],[10,11],[11,12],
+      [9,13],[13,14],[14,15],[15,16],
+      [13,17],[17,18],[18,19],[19,20],[0,17]
+    ];
+
+    ctx.strokeStyle = 'rgba(0, 255, 204, 0.45)';
+    ctx.lineWidth = 1.5;
+    HAND_CONNECTIONS.forEach(([i, j]) => {
+      if (lms[i] && lms[j]) {
+        ctx.beginPath();
+        ctx.moveTo(lms[i].x * w, lms[i].y * h);
+        ctx.lineTo(lms[j].x * w, lms[j].y * h);
+        ctx.stroke();
+      }
+    });
+
+    ctx.fillStyle = '#00ffcc';
+    lms.forEach((lm) => {
+      ctx.beginPath();
+      ctx.arc(lm.x * w, lm.y * h, 3, 0, 2 * Math.PI);
+      ctx.fill();
+    });
+  }
+
+  // 3. Draw active lines
+  const drawLineCurve = (pts, strokeColor, shadowColor, lineWidth = 3.5) => {
+    if (!pts || pts.length < 2) return;
     ctx.strokeStyle = strokeColor;
-    ctx.lineWidth = 4;
+    ctx.lineWidth = lineWidth;
     ctx.lineCap = 'round';
     ctx.lineJoin = 'round';
     ctx.shadowBlur = 8;
@@ -946,16 +1887,49 @@ function redrawPalmCanvas() {
     ctx.shadowBlur = 0;
   };
 
-  drawLineCurve(state.palmPoints.heart, '#e11d48', '#e11d48');
-  drawLineCurve(state.palmPoints.head, '#5b52e0', '#5b52e0');
-  drawLineCurve(state.palmPoints.life, '#0f766e', '#0f766e');
-  drawLineCurve(state.palmPoints.fate, '#334155', '#334155');
+  Object.keys(state.palmPoints).forEach(key => {
+    const meta = LINE_METADATA[key] || { color: '#f97316', shadow: '#f97316', type: 'major' };
+    if (activeLineFilter === 'major' && meta.type !== 'major') return;
+    if (activeLineFilter === 'minor' && meta.type !== 'minor') return;
 
-  // 4. Draw draggable handles
+    drawLineCurve(state.palmPoints[key], meta.color, meta.shadow, meta.type === 'major' ? 4 : 2.5);
+  });
+
+  // 4. Draw Age Milestones (Life line & Fate line)
+  const ageToggle = document.getElementById('toggle-age-milestones');
+  if (ageToggle && ageToggle.checked && state.palmPoints.life) {
+    const milestones = [
+      estimateLifeLineAge(state.palmPoints.life, 20),
+      estimateLifeLineAge(state.palmPoints.life, 40),
+      estimateLifeLineAge(state.palmPoints.life, 60),
+      estimateLifeLineAge(state.palmPoints.life, 80)
+    ].filter(Boolean);
+
+    milestones.forEach(m => {
+      ctx.fillStyle = '#ffffff';
+      ctx.strokeStyle = '#0f766e';
+      ctx.lineWidth = 2;
+      ctx.beginPath();
+      ctx.arc(m.x, m.y, 6, 0, 2 * Math.PI);
+      ctx.fill();
+      ctx.stroke();
+
+      ctx.fillStyle = '#0f766e';
+      ctx.font = 'bold 9px sans-serif';
+      ctx.textAlign = 'left';
+      ctx.fillText(`${m.age}y`, m.x + 8, m.y + 3);
+    });
+  }
+
+  // 5. Draw draggable point handles
   for (const [lineKey, linePoints] of Object.entries(state.palmPoints)) {
+    const meta = LINE_METADATA[lineKey] || { color: '#f97316', type: 'major' };
+    if (activeLineFilter === 'major' && meta.type !== 'major') continue;
+    if (activeLineFilter === 'minor' && meta.type !== 'minor') continue;
+
     linePoints.forEach(p => {
       ctx.fillStyle = 'rgba(249, 115, 22, 0.25)';
-      ctx.strokeStyle = '#f97316';
+      ctx.strokeStyle = meta.color || '#f97316';
       ctx.lineWidth = 2;
 
       ctx.beginPath();
@@ -972,19 +1946,72 @@ function redrawPalmCanvas() {
 }
 
 function runPalmAnalysis() {
-  const readings = analyzePalmLines(state.palmPoints);
+  const shape = dom.handShapeSelect ? dom.handShapeSelect.value : 'Earth';
+  const analysis = analyzePalmLines(state.palmPoints, shape, state.detectedLandmarks);
+  const { readings, metrics, mounts } = analysis;
   
-  dom.palmHeartType.innerText = readings.heart.type;
-  dom.palmHeartDesc.innerText = readings.heart.meaning;
+  // Set Diagnostic Scoreboard Meters (Continuous Biometric Percentages)
+  const setMeter = (valId, barId, score) => {
+    const vEl = document.getElementById(valId);
+    const bEl = document.getElementById(barId);
+    if (vEl) vEl.innerText = `${score}%`;
+    if (bEl) bEl.style.width = `${score}%`;
+  };
 
-  dom.palmHeadType.innerText = readings.head.type;
-  dom.palmHeadDesc.innerText = readings.head.meaning;
+  setMeter('diag-vitality-val', 'diag-vitality-bar', metrics.vitalityScore);
+  setMeter('diag-intellect-val', 'diag-intellect-bar', metrics.intellectScore);
+  setMeter('diag-emotional-val', 'diag-emotional-bar', metrics.emotionalScore);
+  setMeter('diag-destiny-val', 'diag-destiny-bar', metrics.destinyDriveScore);
 
-  dom.palmLifeType.innerText = readings.life.type;
-  dom.palmLifeDesc.innerText = readings.life.meaning;
+  // Major Lines
+  if (readings.heart) {
+    dom.palmHeartType.innerText = `${readings.heart.type} · ${readings.heart.score}%`;
+    dom.palmHeartDesc.innerText = readings.heart.meaning;
+  }
+  if (readings.head) {
+    dom.palmHeadType.innerText = `${readings.head.type} · ${readings.head.score}%`;
+    dom.palmHeadDesc.innerText = readings.head.meaning;
+  }
+  if (readings.life) {
+    dom.palmLifeType.innerText = `${readings.life.type} · ${readings.life.score}%`;
+    dom.palmLifeDesc.innerText = readings.life.meaning;
+  }
+  if (readings.fate) {
+    dom.palmFateType.innerText = `${readings.fate.type} · ${readings.fate.score}%`;
+    dom.palmFateDesc.innerText = readings.fate.meaning;
+  }
 
-  dom.palmFateType.innerText = readings.fate.type;
-  dom.palmFateDesc.innerText = readings.fate.meaning;
+  // Automated Mounts Breakdown Report
+  const mountsReportGrid = document.getElementById('palm-mounts-report-grid');
+  if (mountsReportGrid && mounts) {
+    mountsReportGrid.innerHTML = Object.entries(mounts).map(([key, m]) => `
+      <div class="mount-item-row flex-row justify-between align-center p-05" style="border-radius: 8px; background: rgba(18,23,42,0.03); border: 1px solid var(--border-glass); margin-bottom: 0.35rem;">
+        <div class="flex-col gap-01" style="width: 100%;">
+          <div class="flex-row justify-between align-center">
+            <strong style="color: var(--color-gold); font-size: 0.88rem;">${PALM_MOUNTS[key]?.symbol || '•'} ${PALM_MOUNTS[key]?.name || key}</strong>
+            <span class="mini" style="padding: 0.15rem 0.45rem; border-radius: 4px; font-weight:700; background: ${m.score >= 85 ? 'rgba(16,185,129,0.1)' : 'rgba(249,115,22,0.1)'}; color: ${m.score >= 85 ? '#059669' : '#ea580c'};">${m.cushion} (${m.score}%)</span>
+          </div>
+          <span class="mini" style="color: #0f766e; font-weight: 500;">📍 ${m.location}</span>
+          <span class="mini faded" style="line-height: 1.35; margin-top: 0.15rem;">${m.summary}</span>
+        </div>
+      </div>
+    `).join('');
+  }
+
+  // Minor Lines
+  const sunType = document.getElementById('palm-sun-type');
+  const sunDesc = document.getElementById('palm-sun-desc');
+  if (readings.sun && sunType && sunDesc) {
+    sunType.innerText = readings.sun.type;
+    sunDesc.innerText = readings.sun.meaning;
+  }
+
+  const mercType = document.getElementById('palm-mercury-type');
+  const mercDesc = document.getElementById('palm-mercury-desc');
+  if (readings.mercury && mercType && mercDesc) {
+    mercType.innerText = readings.mercury.type;
+    mercDesc.innerText = readings.mercury.meaning;
+  }
 }
 
 // ==========================================================================

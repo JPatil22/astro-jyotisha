@@ -129,94 +129,21 @@ export const RASHIS = [
   { name: 'Meena', english: 'Pisces', symbol: '♓', lord: 'Jupiter' }
 ];
 
-// --------------------------------------------------------------------------
-// North-Indian style square Kundli (D1 Rashi chart).
-// Houses are FIXED in position (House 1 top-centre, counter-clockwise); the Lagna
-// rashi number sits in House 1 and increases by house. Grahas are placed by rashi.
-// --------------------------------------------------------------------------
-const GRAHA_ABBR = { Sun: 'Su', Moon: 'Mo', Mars: 'Ma', Mercury: 'Me', Jupiter: 'Ju', Venus: 'Ve', Saturn: 'Sa', Rahu: 'Ra', Ketu: 'Ke' };
+// Re-export multi-style Kundli renderers
+export { 
+  drawNorthIndianKundli, 
+  drawSouthIndianKundli, 
+  drawEastIndianKundli, 
+  drawKundliByStyle 
+} from './jyotish-renderers.js';
 
-export function drawNorthIndianKundli(canvas, siderealPositions, lagnaSidereal) {
-  if (!canvas) return;
-  const ctx = canvas.getContext('2d');
-  const W = canvas.width, H = canvas.height;
-  ctx.clearRect(0, 0, W, H);
-
-  // Background — clean white
-  ctx.fillStyle = '#ffffff';
-  ctx.fillRect(0, 0, W, H);
-
-  const pad = 8;
-  const x0 = pad, y0 = pad, x1 = W - pad, y1 = H - pad;
-  const mx = (x0 + x1) / 2, my = (y0 + y1) / 2;
-
-  // Frame, diagonals, and inner diamond
-  ctx.strokeStyle = 'rgba(18, 23, 42, 0.5)';
-  ctx.lineWidth = 1.5;
-  ctx.strokeRect(x0, y0, x1 - x0, y1 - y0);
-  ctx.strokeStyle = 'rgba(18, 23, 42, 0.28)';
-  ctx.beginPath();
-  ctx.moveTo(x0, y0); ctx.lineTo(x1, y1);
-  ctx.moveTo(x1, y0); ctx.lineTo(x0, y1);
-  ctx.stroke();
-  ctx.beginPath();
-  ctx.moveTo(mx, y0); ctx.lineTo(x1, my); ctx.lineTo(mx, y1); ctx.lineTo(x0, my); ctx.closePath();
-  ctx.stroke();
-
-  // House label anchors (fractional positions inside the square)
-  const A = (fx, fy) => ({ x: x0 + (x1 - x0) * fx, y: y0 + (y1 - y0) * fy });
-  const anchors = {
-    1: A(0.50, 0.25), 2: A(0.26, 0.10), 3: A(0.10, 0.26), 4: A(0.25, 0.50),
-    5: A(0.10, 0.74), 6: A(0.26, 0.90), 7: A(0.50, 0.75), 8: A(0.74, 0.90),
-    9: A(0.90, 0.74), 10: A(0.75, 0.50), 11: A(0.90, 0.26), 12: A(0.74, 0.10)
-  };
-
-  const lagnaIdx = Math.floor(normalizeDegrees(lagnaSidereal) / 30); // 0-11
-
-  ctx.textAlign = 'center';
-  ctx.textBaseline = 'middle';
-
-  // Rashi number in each house
-  ctx.font = '10px "Courier New", monospace';
-  for (let h = 1; h <= 12; h++) {
-    const rashiIdx = (lagnaIdx + (h - 1)) % 12;
-    const a = anchors[h];
-    ctx.fillStyle = 'rgba(18, 23, 42, 0.45)';
-    ctx.fillText(String(rashiIdx + 1), a.x, a.y - 9);
-  }
-
-  // Group grahas by house
-  const byHouse = {};
-  Object.keys(siderealPositions).forEach(g => {
-    if (!(g in GRAHA_ABBR)) return;
-    const rIdx = Math.floor(normalizeDegrees(siderealPositions[g]) / 30);
-    const h = ((rIdx - lagnaIdx + 12) % 12) + 1;
-    (byHouse[h] = byHouse[h] || []).push(g);
-  });
-
-  // Place grahas (and the Lagna marker in house 1)
-  ctx.font = 'bold 11px "Courier New", monospace';
-  for (let h = 1; h <= 12; h++) {
-    const list = byHouse[h] || [];
-    const a = anchors[h];
-    const items = [];
-    if (h === 1) items.push({ txt: 'La', color: '#f97316' });
-    list.forEach(g => items.push({ txt: GRAHA_ABBR[g], color: GRAHA_DEFAULTS[g].color }));
-
-    // Lay out items in rows of up to 3, centred under the rashi number
-    const perRow = 3;
-    items.forEach((it, i) => {
-      const row = Math.floor(i / perRow);
-      const inRow = Math.min(perRow, items.length - row * perRow);
-      const col = i % perRow;
-      const spacing = 20;
-      const rowX = a.x + (col - (inRow - 1) / 2) * spacing;
-      const rowY = a.y + 4 + row * 12;
-      ctx.fillStyle = it.color;
-      ctx.fillText(it.txt, rowX, rowY);
-    });
-  }
-}
+// Re-export Shodashvarga helpers
+export {
+  VARGA_DEFINITIONS,
+  getVargaRashiIndex,
+  getVargaSyntheticLongitude,
+  calculateVargaChart
+} from './jyotish-varga.js';
 
 // Rashi (sidereal sign) from a SIDEREAL longitude, with degree/minute within the sign.
 export function getRashi(siderealLongitude) {
@@ -243,16 +170,12 @@ export function getHouseFromLagna(siderealLongitude, lagnaSidereal) {
 }
 
 // --------------------------------------------------------------------------
-// Navamsa (D9) — each 30° Rashi is split into nine 3°20' parts. The continuous
-// division (longitude / 3.3333°, mod 12) reproduces the classical rule where
-// movable signs start from themselves, fixed from the 9th, and dual from the 5th.
+// Navamsa (D9) — each 30° Rashi is split into nine 3°20' parts.
 // --------------------------------------------------------------------------
 const NAVAMSA_SPAN = 30 / 9; // 3.3333... degrees
 export function getNavamsaRashiIndex(siderealLongitude) {
   return Math.floor(normalizeDegrees(siderealLongitude) / NAVAMSA_SPAN) % 12;
 }
-// A synthetic longitude at the middle of the navamsa Rashi, so the same
-// drawNorthIndianKundli() can render the D9 chart from navamsa positions.
 export function getNavamsaLongitude(siderealLongitude) {
   return getNavamsaRashiIndex(siderealLongitude) * 30 + 15;
 }
@@ -265,3 +188,4 @@ export const MANGLIK_HOUSES = [1, 2, 4, 7, 8, 12];
 export function isManglikHouse(house) {
   return MANGLIK_HOUSES.includes(house);
 }
+
