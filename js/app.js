@@ -1768,7 +1768,21 @@ function initPalmistrySetup() {
   
   canvas.addEventListener('touchstart', handleStart);
   canvas.addEventListener('touchmove', handleMove);
-  canvas.addEventListener('touchend', handleEnd);
+  // Preload real human palm photograph as default high-res background
+  const defaultImg = new Image();
+  defaultImg.onload = async () => {
+    if (!state.palmImage) {
+      state.palmImage = defaultImg;
+      state.edgeMap = runSobelCreaseDetection(defaultImg, dom.palmCanvas.width, dom.palmCanvas.height);
+      dom.snapPalmPoints.classList.remove('hidden');
+      dom.overlayToggleContainer.classList.remove('hidden');
+      dom.toggleCreaseOverlay.checked = true;
+      redrawPalmCanvas();
+      await triggerMediaPipeDetection(defaultImg);
+      runPalmAnalysis();
+    }
+  };
+  defaultImg.src = 'default_palm.jpg';
 
   // Initial draw
   redrawPalmCanvas();
@@ -1792,7 +1806,7 @@ function redrawPalmCanvas() {
     
     ctx.drawImage(img, x, y, img.width * scale, img.height * scale);
     
-    ctx.fillStyle = 'rgba(3, 3, 11, 0.45)';
+    ctx.fillStyle = 'rgba(15, 23, 42, 0.25)';
     ctx.fillRect(0, 0, w, h);
 
     // Heatmap Overlay
