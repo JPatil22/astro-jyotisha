@@ -1328,7 +1328,42 @@ h1, h2, h3, h4 { font-weight: 700; letter-spacing: -0.01em; color: var(--color-t
 
 /* Sidebar & top bar */
 .sidebar { background: #ffffff; border-right: 1px solid var(--border-glass); }
-.top-bar { background: transparent; color: var(--color-text-faded); }
+.top-bar { 
+  display: flex; 
+  align-items: center; 
+  justify-content: space-between; 
+  background: transparent; 
+  color: var(--color-text-faded); 
+  padding: 0.5rem 0 1rem 0;
+}
+.cosmic-clock-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+  padding: 0.35rem 0.85rem;
+  background: #ffffff;
+  border: 1.5px solid var(--border-glass);
+  border-radius: 999px;
+  font-size: 0.78rem;
+  color: var(--color-text-white);
+  box-shadow: 0 2px 8px rgba(18, 23, 42, 0.04);
+}
+.cosmic-clock-pill .clock-tag {
+  font-weight: 800;
+  font-size: 0.7rem;
+  color: var(--color-gold);
+  letter-spacing: 0.05em;
+}
+.cosmic-clock-pill strong {
+  font-family: 'JetBrains Mono', monospace, sans-serif;
+  font-size: 0.78rem;
+  color: #0f172a;
+  font-weight: 600;
+}
+.cosmic-clock-pill .clock-divider {
+  color: #94a3b8;
+  margin: 0 0.15rem;
+}
 .nav-link { color: var(--color-text-faded); font-weight: 500; border-radius: 10px; }
 .nav-link:hover { color: var(--color-text-white); background: rgba(18, 23, 42, 0.04); }
 .nav-link.active { color: var(--color-gold); background: rgba(249, 115, 22, 0.10); }

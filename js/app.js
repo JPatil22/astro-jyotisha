@@ -257,10 +257,10 @@ function initStarfield() {
 }
 
 function initClock() {
-  const zodiacSigns = ['♈', '♉', '♊', '♋', '♌', '♍', '♎', '♏', '♐', '♑', '♒', '♓'];
   setInterval(() => {
     const now = new Date();
-    const utcStr = now.toISOString().replace('T', ' ').substring(0, 19);
+    const utcDate = now.toISOString().substring(0, 10);
+    const utcTime = now.toISOString().substring(11, 19);
     
     // Simulate sidereal clock ticker
     const j2000 = new Date(2000, 0, 1);
@@ -269,9 +269,20 @@ function initClock() {
     const h = Math.floor(siderealTime);
     const m = Math.floor((siderealTime - h) * 60);
     const s = Math.floor(((siderealTime - h) * 60 - m) * 60);
+    const lstStr = `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`;
     
-    const zodiacIcon = zodiacSigns[Math.floor((now.getMinutes() / 5)) % 12];
-    dom.cosmicClock.innerHTML = `${zodiacIcon} UTC: ${utcStr} | LST: ${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`;
+    if (dom.cosmicClock) {
+      dom.cosmicClock.innerHTML = `
+        <div class="cosmic-clock-pill">
+          <svg class="ico ico-accent" style="width: 14px; height: 14px;"><use href="#i-sparkle"/></svg>
+          <span class="clock-tag">UTC</span>
+          <strong>${utcDate} ${utcTime}</strong>
+          <span class="clock-divider">|</span>
+          <span class="clock-tag">LST</span>
+          <strong>${lstStr}</strong>
+        </div>
+      `;
+    }
   }, 1000);
 }
 
